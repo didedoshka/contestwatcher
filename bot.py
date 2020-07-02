@@ -6,11 +6,12 @@ import atcoder
 import codeforces
 import datetime
 import sys
+import config
 
 db = json.load(open("db.json", 'r'))
 log = json.load(open("log.json", 'r'))
 
-API_TOKEN = "1390188298:AAEkj4mJcLMzfBGzNfn7-CrVBwG_cJm68Ak"
+API_TOKEN = config.API_TOKEN
 
 start_message = "Hi!\n" \
                 "I'm @didedoshka CW Bot!\n" \
