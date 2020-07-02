@@ -553,10 +553,15 @@ async def main(message: types.Message):
                     "Not a valid amount of minutes. Send me amount of minutes before the contest you want to be notified",
                     reply_markup=types.ForceReply.create(selective=True), reply=True)
                 return
-            db['id'][str(message.chat['id'])]["notifications"].append(int(message.text))
-            db['id'][str(message.chat['id'])]["notifications"].sort()
-            save_json()
-            await message.answer("Notifications were edited successfully")
+            if int(message.text) not in db['id'][str(message.chat['id'])]["notifications"]:
+                db['id'][str(message.chat['id'])]["notifications"].append(int(message.text))
+                db['id'][str(message.chat['id'])]["notifications"].sort()
+                save_json()
+                await message.answer("Notifications were edited successfully")
+            else:
+                await message.answer(
+                    "It\'s already in the list. \nSend me amount of minutes before the contest you want to be notified",
+                    reply_markup=types.ForceReply.create(selective=True))
 
         elif message.reply_to_message.text[-82:] == \
                 'Send me amount of minutes before the contest you don\'t want to be notified anymore':
