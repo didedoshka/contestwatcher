@@ -10,7 +10,7 @@ import sys
 db = json.load(open("db.json", 'r'))
 log = json.load(open("log.json", 'r'))
 
-API_TOKEN = "1397545266:AAEU1ghXqUfpx04nr6NVwfJq7fcllC-ClEk"
+API_TOKEN = "1390188298:AAEkj4mJcLMzfBGzNfn7-CrVBwG_cJm68Ak"
 
 start_message = "Hi!\n" \
                 "I'm @didedoshka CW Bot!\n" \
