@@ -1,0 +1,32 @@
+{
+  "log": [
+    {
+      "time": "2020-07-02T01:50:48.285054",
+      "value": "upcoming list was sent (818537853)"
+    },
+    {
+      "time": "2020-07-02T01:53:43.270443",
+      "value": "rating changes were sent to (818537853)"
+    },
+    {
+      "time": "2020-07-02T01:54:59.471994",
+      "value": "rating changes were sent to (818537853)"
+    },
+    {
+      "time": "2020-07-02T02:21:35.216308",
+      "value": "/usernames was used (-476613313)"
+    },
+    {
+      "time": "2020-07-02T02:21:45.226457",
+      "value": "/usernames was used (818537853)"
+    },
+    {
+      "time": "2020-07-02T02:22:48.536187",
+      "value": "upcoming list was sent (818537853)"
+    },
+    {
+      "time": "2020-07-02T02:23:23.371228",
+      "value": "/usernames was used (818537853)"
+    }
+  ]
+}

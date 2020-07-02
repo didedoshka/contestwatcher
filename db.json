@@ -1,0 +1,100 @@
+{
+  "id": {
+    "-476613313": {
+      "tz": 0,
+      "status": 1,
+      "notifications": [
+        15,
+        60,
+        1440
+      ],
+      "cf_handles": {},
+      "ac_usernames": {
+        "didedoshka": 135,
+        "kamendovmaxim": 0,
+        "i_love_chickpea": 2995
+      }
+    },
+    "818537853": {
+      "tz": 3,
+      "status": 1,
+      "notifications": [
+        15,
+        60,
+        1440
+      ],
+      "cf_handles": {
+        "Didedoshka": 1500,
+        "Pakhomovee": 2107,
+        "Allvik06": 2137,
+        "CoffeBee": 1695,
+        "dsgrekova": 1895,
+        "vdv09": 1645
+      },
+      "ac_usernames": {
+        "didedoshka": 135,
+        "NToneE": 7,
+        "klno": 1137
+      }
+    },
+    "588084243": {
+      "tz": 0,
+      "status": 1,
+      "notifications": [
+        15,
+        60,
+        1440
+      ],
+      "cf_handles": {},
+      "ac_usernames": {}
+    },
+    "705567062": {
+      "tz": 3,
+      "status": 1,
+      "notifications": [
+        15,
+        60,
+        1440
+      ],
+      "cf_handles": {
+        "NToneE": 1708,
+        "gerasikov.fml31": 1815
+      },
+      "ac_usernames": {}
+    }
+  },
+  "contests": [
+    [
+      "2020-07-04T14:35:00",
+      "<a href=\"https://codeforces.com/contest/1375\">Codeforces Global Round 9</a>",
+      "150 minutes",
+      "cf"
+    ],
+    [
+      "2020-07-11T12:00:00",
+      "<a href=\"https://atcoder.jp/contests/aising2020\">AIsing Programming Contest 2020</a>",
+      "100 minutes",
+      "ac"
+    ],
+    [
+      "2020-07-11T15:05:00",
+      "<a href=\"https://codeforces.com/contest/1372\">Codeforces Round #655 (Div. 2)</a>",
+      "120 minutes",
+      "cf"
+    ],
+    [
+      "2020-07-19T09:00:00",
+      "<a href=\"https://codeforces.com/contest/1379\">Codeforces Round #656 (Div. 2)</a>",
+      "120 minutes",
+      "cf"
+    ]
+  ],
+  "last_codeforces": {
+    "name": "<a href=\"https://codeforces.com/contest/1371\">Codeforces Round #654 (Div. 2)</a>",
+    "status": 1
+  },
+  "last_atcoder": {
+    "name": "<a href=\"https://atcoder.jp/contests/abc172\">AtCoder Beginner Contest 172</a>",
+    "status": 1
+  }
+}
