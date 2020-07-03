@@ -1,4 +1,4 @@
-aiogram~=2.9.2
-bs4~=0.0.1
-beautifulsoup4~=4.9.1
-requests~=2.24.0
+aiogram
+bs4
+beautifulsoup4
+requests
