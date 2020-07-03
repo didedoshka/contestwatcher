@@ -2,7 +2,7 @@
   "id": {
     "-476613313": {
       "tz": 0,
-      "status": 1,
+      "status": 0,
       "notifications": [
         15,
         60,
@@ -17,28 +17,23 @@
     },
     "818537853": {
       "tz": 3,
-      "status": 1,
+      "status": 0,
       "notifications": [
         15,
         60,
         1440
       ],
       "cf_handles": {
+        "Didedoshka": 1500,
         "Pakhomovee": 2107,
         "Allvik06": 2137,
         "CoffeBee": 1695,
-        "vdv09": 1645,
-        "false": 0,
-        "NToneE": 1708,
-        "gerasikov.fml31": 1815,
-        "pavelthebest": 1477,
-        "ZZZGen": 1719,
-        "kama_kama": 1474
+        "dsgrekova": 1895,
+        "vdv09": 1645
       },
       "ac_usernames": {
-        "southball": 2029,
-        "n4o847": 1770,
-        "rstoick": 2205
+        "didedoshka": 135,
+        "NToneE": 7
       }
     },
     "588084243": {
@@ -65,6 +60,68 @@
         "gerasikov.fml31": 1815
       },
       "ac_usernames": {}
+    },
+    "547437324": {
+      "tz": 3,
+      "status": 1,
+      "notifications": [
+        15,
+        60,
+        1440
+      ],
+      "cf_handles": {
+        "vdv09": 1645
+      },
+      "ac_usernames": {}
+    },
+    "800155626": {
+      "tz": 5,
+      "status": 1,
+      "notifications": [
+        15,
+        60,
+        1440
+      ],
+      "cf_handles": {},
+      "ac_usernames": {}
+    },
+    "-1001333950054": {
+      "tz": 3,
+      "status": 1,
+      "notifications": [
+        15,
+        60,
+        1440
+      ],
+      "cf_handles": {
+        "NToneE": 1708,
+        "FedShat": 1454,
+        "ilyakrasnovv": 1632,
+        "pavelthebest": 1477,
+        "ZZZGen": 1719,
+        "Previous": 1556,
+        "kama_kama": 1474,
+        "gerasikov.fml31": 1815,
+        "Didedoshka": 1500,
+        "Renatyss": 1934,
+        "artem3605": 1901,
+        "dsgrekova": 1895,
+        "vdv09": 1645,
+        "gerasikoff": 0,
+        "Prokhor08": 1509,
+        "kamendovmaxim": 1556,
+        "Dementiy_goni_sviney": 1329,
+        "Pakhomovee": 2107,
+        "Allvik06": 2137,
+        "CoffeBee": 1695,
+        "GEOMA_DLYA_PIDORASOV": 480,
+        "Dmitry10005": 1521
+      },
+      "ac_usernames": {
+        "didedoshka": 135,
+        "NToneE": 7,
+        "pakhomovee": 1431
+      }
     }
   },
   "contests": [
@@ -73,6 +130,12 @@
       "<a href=\"https://codeforces.com/contest/1375\">Codeforces Global Round 9</a>",
       "150 minutes",
       "cf"
+    ],
+    [
+      "2020-07-05T12:00:00",
+      "<a href=\"https://atcoder.jp/contests/abc173\">AtCoder Beginner Contest 173</a>",
+      "100 minutes",
+      "ac"
     ],
     [
       "2020-07-11T12:00:00",
