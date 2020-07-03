@@ -544,7 +544,7 @@ async def main(message: types.Message):
     await add_person(message)
     # print(message.text)
     if message.reply_to_message is not None:
-        if message.reply_to_message.text[-20:] == 'Send me new timezone (number of hours offset from UTC)':
+        if message.reply_to_message.text[-54:] == 'Send me new timezone (number of hours offset from UTC)':
             try:
                 int(message.text)
                 if (int(message.text) > 12) or (int(message.text) < -12):
