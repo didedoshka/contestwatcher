@@ -536,7 +536,7 @@ async def send_upcoming(message: types.Message):
 async def change_timezone(message: types.Message):
     await add_log(f'timezone was changed ({str(message.chat["id"])})')
     await add_person(message)
-    await message.reply('Send me new timezone', reply_markup=types.ForceReply.create(selective=True), reply=True)
+    await message.reply('Send me new timezone (number of hours offset from UTC)', reply_markup=types.ForceReply.create(selective=True), reply=True)
 
 
 @dp.message_handler()
@@ -544,13 +544,13 @@ async def main(message: types.Message):
     await add_person(message)
     # print(message.text)
     if message.reply_to_message is not None:
-        if message.reply_to_message.text[-20:] == 'Send me new timezone':
+        if message.reply_to_message.text[-20:] == 'Send me new timezone (number of hours offset from UTC)':
             try:
                 int(message.text)
                 if (int(message.text) > 12) or (int(message.text) < -12):
                     raise ValueError
             except ValueError:
-                await message.answer("Not a valid timezone. Send me new timezone",
+                await message.answer("Not a valid timezone. Send me new timezone (number of hours offset from UTC)",
                                      reply_markup=types.ForceReply.create(selective=True), reply=True)
                 return
             db['id'][str(message.chat['id'])]["tz"] = int(message.text)
