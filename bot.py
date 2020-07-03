@@ -586,7 +586,7 @@ async def main(message: types.Message):
             else:
                 await message.answer(
                     "It\'s already in the list. \nSend me amount of minutes before the contest you want to be notified",
-                    reply_markup=types.ForceReply.create(selective=True))
+                    reply_markup=types.ForceReply.create(selective=True), reply=True)
 
         elif message.reply_to_message.text[-82:] == \
                 'Send me amount of minutes before the contest you don\'t want to be notified anymore':
