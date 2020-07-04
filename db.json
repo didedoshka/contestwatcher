@@ -51,6 +51,7 @@
       "tz": 3,
       "status": 1,
       "notifications": [
+        1,
         15,
         60,
         1440
@@ -70,7 +71,8 @@
         1440
       ],
       "cf_handles": {
-        "vdv09": 1645
+        "vdv09": 1645,
+        "STOP": 0
       },
       "ac_usernames": {}
     },
@@ -89,7 +91,18 @@
       "tz": 3,
       "status": 1,
       "notifications": [
+        5,
+        10,
         15,
+        20,
+        25,
+        30,
+        35,
+        38,
+        40,
+        45,
+        50,
+        55,
         60,
         1440
       ],
@@ -122,11 +135,20 @@
         "NToneE": 7,
         "pakhomovee": 1431
       }
+    },
+    "1035681338": {
+      "tz": 3,
+      "status": 1,
+      "notifications": [],
+      "cf_handles": {
+        "Didedoshka": 1500
+      },
+      "ac_usernames": {}
     }
   },
   "contests": [
     [
-      "2020-07-04T14:35:00",
+      "2020-07-04T14:45:00",
       "<a href=\"https://codeforces.com/contest/1375\">Codeforces Global Round 9</a>",
       "150 minutes",
       "cf"
@@ -150,6 +172,12 @@
       "cf"
     ],
     [
+      "2020-07-12T14:35:00",
+      "<a href=\"https://codeforces.com/contest/1380\">Educational Codeforces Round 91 (Rated for Div. 2)</a>",
+      "120 minutes",
+      "cf"
+    ],
+    [
       "2020-07-19T09:00:00",
       "<a href=\"https://codeforces.com/contest/1379\">Codeforces Round #656 (Div. 2)</a>",
       "120 minutes",
@@ -157,8 +185,8 @@
     ]
   ],
   "last_codeforces": {
-    "name": "<a href=\"https://codeforces.com/contest/1371\">Codeforces Round #654 (Div. 2)</a>",
-    "status": 1
+    "name": "<a href=\"https://codeforces.com/contest/1375\">Codeforces Global Round 9</a>",
+    "status": 0
   },
   "last_atcoder": {
     "name": "<a href=\"https://atcoder.jp/contests/abc172\">AtCoder Beginner Contest 172</a>",
