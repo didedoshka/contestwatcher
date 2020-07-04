@@ -427,6 +427,7 @@ async def check_changes(wait_for):
         upcoming = db['contests']
         for contest in upcoming:
             if int((contest[0] - datetime.datetime.utcnow()) / datetime.timedelta(minutes=1)) == 0:
+                get_upcoming()
                 if contest[3] == 'cf':
                     db['last_codeforces']['name'] = contest[1]
                     db['last_codeforces']['status'] = 0
@@ -493,6 +494,17 @@ async def send_logs(message: types.Message):
     await message.reply(reply_message)
 
 
+@dp.message_handler(commands=['refresh'])
+async def refresh(message: types.Message):
+    if str(message.chat['id']) != "818537853":
+        await message.reply('You\'re not an administrator here')
+        await add_log(f'he tried to refresh ({message.chat["id"]})')
+        return
+    new_message = await message.reply('<a><b>Processing...</b></a>', parse_mode='HTML')
+    get_upcoming()
+    await new_message.edit_text('<a><b>Done...</b></a>', parse_mode='HTML')
+
+
 @dp.message_handler(commands=['status'])
 async def change_status(message: types.Message):
     await add_log(f'status was changed ({str(message.chat["id"])})')
@@ -536,7 +548,8 @@ async def send_upcoming(message: types.Message):
 async def change_timezone(message: types.Message):
     await add_log(f'timezone was changed ({str(message.chat["id"])})')
     await add_person(message)
-    await message.reply('Send me new timezone (number of hours offset from UTC)', reply_markup=types.ForceReply.create(selective=True), reply=True)
+    await message.reply('Send me new timezone (number of hours offset from UTC)',
+                        reply_markup=types.ForceReply.create(selective=True), reply=True)
 
 
 @dp.message_handler()
