@@ -502,7 +502,7 @@ async def refresh(message: types.Message):
         return
     new_message = await message.reply('<a><b>Processing...</b></a>', parse_mode='HTML')
     get_upcoming()
-    await new_message.edit_text('<a><b>Done...</b></a>', parse_mode='HTML')
+    await new_message.edit_text('<a><b>Done</b></a>', parse_mode='HTML')
 
 
 @dp.message_handler(commands=['status'])
