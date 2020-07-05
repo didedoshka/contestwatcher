@@ -399,6 +399,8 @@ async def send_ac_rating_changes():
                     else:
                         pass
             save_json()
+        else:
+            await add_log(f"Rating changes for {db['last_atcoder']['name']} aren\'t out yet")
 
 
 async def get_atcoder_url(name):

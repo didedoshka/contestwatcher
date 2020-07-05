@@ -22,7 +22,7 @@ async def get_last():
 
     name = table.find_all('a')[1]
 
-    return name
+    return str(name)[:9] + host + str(name)[9:]
 
 
 async def get_rating_change(url, user):
@@ -54,7 +54,7 @@ async def are_rating_changes_out(url):
     soup = BeautifulSoup(html, features='html.parser')
     table = soup.find('table', class_='table table-bordered table-striped small th-center')
     tbody = table.find('tbody')
-    tr = tbody.find_all('tr')[-1]
+    tr = tbody.find_all('tr')[0]
     user = tr.find_all('a')[1]['href']
     html = get_html(f'{host}{user}/history')
     # html = get_html(f'{host}/users/NToneE/history')
