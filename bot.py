@@ -95,18 +95,21 @@ def load_json():
 
 
 def get_upcoming():
-    sync_add_log('upcoming was gotten')
-    upcoming = []
-    upcoming.extend(atcoder.parse_upcoming())
-    upcoming.extend(codeforces.get_upcoming())
+    try:
+        upcoming = []
+        upcoming.extend(atcoder.parse_upcoming())
+        upcoming.extend(codeforces.get_upcoming())
 
-    upcoming.sort()
+        upcoming.sort()
 
-    for i in range(len(upcoming)):
-        upcoming[i][0] = datetime.datetime.isoformat(upcoming[i][0])
-    db['contests'] = upcoming
-    json.dump(db, open('db.json', 'w'), indent=2)
-    load_json()
+        for i in range(len(upcoming)):
+            upcoming[i][0] = datetime.datetime.isoformat(upcoming[i][0])
+        db['contests'] = upcoming
+        json.dump(db, open('db.json', 'w'), indent=2)
+        load_json()
+        sync_add_log('upcoming was gotten')
+    except ...:
+        sync_add_log('!upcoming wasn\'t gotten. Something happened')
 
 
 def save_json():
