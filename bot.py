@@ -35,11 +35,6 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
-dp.loop.create_task(json_creator.check())
-
-db = json.load(open("db.json", 'r'))
-log = json.load(open("log.json", 'r'))
-
 
 async def add_log(string):
     d = {'time': datetime.datetime.now().isoformat(), 'value': string}
@@ -819,8 +814,16 @@ async def send_message(message):
         await bot.send_message(i, message)
 
 
+async def load_json_and_db():
+    global db
+    global log
+    db = json.load(open("db.json", 'r'))
+    log = json.load(open("log.json", 'r'))
+
+
 if __name__ == '__main__':
-    load_json()
+    dp.loop.create_task(json_creator.check())
+    dp.loop.create_task(load_json_and_db())
     # dp.loop.create_task(get_upcoming())
     dp.loop.create_task(get_changes(6000))
     dp.loop.create_task(send_rating_changes(300))
