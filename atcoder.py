@@ -144,9 +144,16 @@ async def main():
              'yutaka1999']
     ratings = []
     for username in users:
-        new_rating = await get_rating(username)
-        ratings.append(new_rating)
-    print(*ratings)
+        ratings.append(asyncio.create_task(get_rating(username)))
+
+
+    output = []
+
+    for t in ratings:
+        rating = await t
+        output.append(rating)
+
+    print(*output)
 
 
 if __name__ == '__main__':
