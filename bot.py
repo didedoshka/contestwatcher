@@ -110,6 +110,7 @@ async def get_upcoming():
         sync_add_log('upcoming was gotten')
     except Exception as e:
         sync_add_log(f'!upcoming wasn\'t gotten. {e}')
+        raise e
 
 
 def save_json():
@@ -421,7 +422,10 @@ async def send_rating_changes(wait_for):
 async def get_changes(wait_for):
     while True:
         await asyncio.sleep(wait_for)
-        await get_upcoming()
+        try:
+            await get_upcoming()
+        finally:
+            pass
 
 
 # check changes in db
@@ -431,7 +435,10 @@ async def check_changes(wait_for):
         upcoming = db['contests']
         for contest in upcoming:
             if int((contest[0] - datetime.datetime.utcnow()) / datetime.timedelta(minutes=1)) == 0:
-                await get_upcoming()
+                try:
+                    await get_upcoming()
+                finally:
+                    pass
                 if contest[3] == 'cf':
                     db['last_codeforces']['name'] = contest[1]
                     db['last_codeforces']['status'] = 0
@@ -506,8 +513,11 @@ async def refresh(message: types.Message):
         return
     new_message = await message.reply('<a><b>Processing...</b></a>', parse_mode='HTML')
     now = time.time()
-    await get_upcoming()
-    await new_message.edit_text(f'<a><b>Done in {"%.3f" % (time.time() - now)}s</b></a>', parse_mode='HTML')
+    try:
+        await get_upcoming()
+        await new_message.edit_text(f'<a><b>Done in {"%.3f" % (time.time() - now)}s</b></a>', parse_mode='HTML')
+    except Exception as e:
+        await new_message.edit_text(f'Something happened. {e}', parse_mode='HTML')
 
 
 @dp.message_handler(commands=['status'])
@@ -813,9 +823,16 @@ async def send_message(message):
         await bot.send_message(i, message)
 
 
+async def try_getting_upcoming():
+    try:
+        await get_upcoming()
+    except Exception as e:
+        pass
+
+
 if __name__ == '__main__':
     load_json()
-    dp.loop.create_task(get_upcoming())
+    dp.loop.create_task(try_getting_upcoming())
     dp.loop.create_task(get_changes(6000))
     dp.loop.create_task(send_rating_changes(300))
     dp.loop.create_task(check_changes(60))
