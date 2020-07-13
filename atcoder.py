@@ -139,7 +139,17 @@ async def parse_upcoming():
     return table
 
 
+async def main():
+    users = ['tourist', 'ksun48', 'Um_nik', 'ecnerwala', 'apiad', 'mnbvmar', 'Petr', 'cospleermusora', 'LHiC',
+             'yutaka1999']
+    ratings = []
+    for username in users:
+        new_rating = await get_rating(username)
+        ratings.append(new_rating)
+    print(*ratings)
+
+
 if __name__ == '__main__':
     now = time.time()
-    print(asyncio.run(parse_upcoming()))
+    asyncio.run(main())
     print(time.time() - now)
