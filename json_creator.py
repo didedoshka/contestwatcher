@@ -1,13 +1,16 @@
 import os
-
+import asyncio
 import json
 
 
-async def check():
+def check():
+    files = []
     if not os.path.exists('db.json'):
-        await create(['db.json'])
+        files.append('db.json')
     if not os.path.exists('log.json'):
-        await create(['log.json'])
+        files.append('log.json')
+    if files:
+        asyncio.run(create(files))
 
 
 async def create(files):

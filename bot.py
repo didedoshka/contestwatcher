@@ -10,12 +10,19 @@ import config
 import json_creator
 import time
 
-# loop = asyncio.get_event_loop()
-# loop.run_until_complete(json_creator.check())
-# loop.close()
-
-
 API_TOKEN = config.API_TOKEN
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
+# Initialize bot and dispatcher
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher(bot)
+
+json_creator.check()
+
+db = json.load(open("db.json", 'r'))
+log = json.load(open("log.json", 'r'))
 
 start_message = "Hi!\n" \
                 "I'm @didedoshka CW Bot!\n" \
@@ -27,13 +34,6 @@ start_message = "Hi!\n" \
                 "/timezone - Change current timezone\n" \
                 "/status - Change the way you get notifications (0 - off, 1 - on, 2 - silent)\n" \
                 "/notifications - Change the time you get notifications"
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-
-# Initialize bot and dispatcher
-bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot)
 
 
 async def add_log(string):
@@ -108,8 +108,8 @@ async def get_upcoming():
         json.dump(db, open('db.json', 'w'), indent=2)
         load_json()
         sync_add_log('upcoming was gotten')
-    except ...:
-        sync_add_log('!upcoming wasn\'t gotten. Something happened')
+    except Exception as e:
+        sync_add_log(f'!upcoming wasn\'t gotten. {e}')
 
 
 def save_json():
@@ -422,7 +422,6 @@ async def get_changes(wait_for):
     while True:
         await asyncio.sleep(wait_for)
         await get_upcoming()
-        await add_log('changes were gotten')
 
 
 # check changes in db
@@ -814,19 +813,9 @@ async def send_message(message):
         await bot.send_message(i, message)
 
 
-async def load_json_and_db():
-    global db
-    global log
-    db = json.load(open("db.json", 'r'))
-    log = json.load(open("log.json", 'r'))
-    load_json()
-
-
 if __name__ == '__main__':
-    dp.loop.create_task(json_creator.check())
-    dp.loop.create_task(load_json_and_db())
-
-    # dp.loop.create_task(get_upcoming())
+    load_json()
+    dp.loop.create_task(get_upcoming())
     dp.loop.create_task(get_changes(6000))
     dp.loop.create_task(send_rating_changes(300))
     dp.loop.create_task(check_changes(60))
