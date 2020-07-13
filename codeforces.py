@@ -1,5 +1,7 @@
 import asyncio
+import time
 
+import aiohttp
 import requests
 import json
 import datetime
@@ -42,10 +44,14 @@ def get_rating_changes(id):
         return True, result['result']
 
 
-def get_upcoming():
+async def get_upcoming():
+    async with aiohttp.ClientSession() as session:
+        async with session.get('https://codeforces.com/api/contest.list') as response:
+            a = await response.text()
+
     import bot
-    a = requests.get('https://codeforces.com/api/contest.list')
-    all_codeforces_contests = json.loads(a.text)
+
+    all_codeforces_contests = json.loads(a)
     codeforces_contests = []
     times = []
     names = []
@@ -64,3 +70,9 @@ def get_upcoming():
         table.append([times[i], names[i], durations[i], contest_type])
 
     return table
+
+
+if __name__ == '__main__':
+    now = time.time()
+    print(asyncio.run(get_upcoming()))
+    print(time.time() - now)
