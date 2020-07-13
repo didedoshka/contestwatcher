@@ -195,7 +195,7 @@ async def remove_ac_from_db(usernames, message: types.Message):
             db['id'][str(message.chat['id'])]['ac_usernames'].pop(username)
 
     save_json()
-    await add_log(f'ac users were removed ({str(message.chat["id"])}) {usernames_to_remove} in {time.time() - now}s')
+    await add_log(f'ac users were removed ({str(message.chat["id"])}) {usernames_to_remove} in {"%.3f" % (time.time() - now)}s')
     return usernames_to_remove, not_existing_usernames, not_in_username_list
 
 
@@ -218,24 +218,43 @@ async def remove_cf(message: types.Message):
 
 
 async def add_cf_to_db(handles, message: types.Message):
+    now = time.time()
     handles_to_add = []
     not_existing_handles = []
     already_added_handles = []
+    users = []
+
+    i = 1
+
     for handle in handles:
-        cf_handle = await codeforces.check_handle(handle)
+        if i % 5 == 0:
+            await asyncio.sleep(1)
+        users.append((handle, dp.loop.create_task(codeforces.check_handle(handle.lstrip(' ')))))
+        i += 1
+
+    for inputted, handle in users:
+        cf_handle = await handle
         if not cf_handle:
-            not_existing_handles.append(handle.lstrip(' '))
+            not_existing_handles.append(inputted.lstrip(' '))
             continue
         if cf_handle in db['id'][str(message.chat['id'])]['cf_handles']:
             already_added_handles.append(cf_handle)
             continue
         else:
             handles_to_add.append(cf_handle)
+    ratings = []
+    i = 1
     for handle in handles_to_add:
+        if i % 5 == 0:
+            await asyncio.sleep(1)
+        ratings.append((handle, dp.loop.create_task(codeforces.get_rating(handle))))
+        i += 1
+
+    for handle, rating in ratings:
         # print(handle)
-        db['id'][str(message.chat['id'])]['cf_handles'][handle] = await codeforces.get_rating(handle)
+        db['id'][str(message.chat['id'])]['cf_handles'][handle] = await rating
     save_json()
-    await add_log(f'cf users were added ({str(message.chat["id"])}) {handles_to_add}')
+    await add_log(f'cf users were added ({str(message.chat["id"])}) {handles_to_add} in {"%.3f" % (time.time() - now)}s')
     return handles_to_add, not_existing_handles, already_added_handles
 
 
@@ -267,7 +286,7 @@ async def add_ac_to_db(usernames, message: types.Message):
         # print(username)
         db['id'][str(message.chat['id'])]['ac_usernames'][username] = await rating
     save_json()
-    await add_log(f'ac users were added ({str(message.chat["id"])}) {usernames_to_add} in {time.time() - now}s')
+    await add_log(f'ac users were added ({str(message.chat["id"])}) {usernames_to_add} in {"%.3f" % (time.time() - now)}s')
     return usernames_to_add, not_existing_usernames, already_added_usernames
 
 

@@ -1,10 +1,16 @@
 import asyncio
 import time
-
+from colorama import Fore
 import aiohttp
 import requests
 import json
 import datetime
+
+
+async def get(url):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            return await response.text()
 
 
 async def get_last():
@@ -24,7 +30,6 @@ async def get_rating(handle):
 
 async def check_handle(handle):
     a = requests.get(f'https://codeforces.com/api/user.info?handles={handle}')
-    await asyncio.sleep(0.5)
     result = json.loads(a.text)
     if result['status'] != 'OK':
         return False
@@ -45,11 +50,9 @@ def get_rating_changes(id):
 
 
 async def get_upcoming():
-    async with aiohttp.ClientSession() as session:
-        async with session.get('https://codeforces.com/api/contest.list') as response:
-            a = await response.text()
-
     import bot
+
+    a = await get('https://codeforces.com/api/contest.list')
 
     all_codeforces_contests = json.loads(a)
     codeforces_contests = []
@@ -73,6 +76,10 @@ async def get_upcoming():
 
 
 if __name__ == '__main__':
-    now = time.time()
-    print(asyncio.run(get_upcoming()))
-    print(time.time() - now)
+    for i in range(5):
+        print(asyncio.run(get('https://codeforces.com/api/contest.list'))[:40])
+    time.sleep(0.5)
+    print(Fore.BLUE + 'Sleeping')
+    print(Fore.LIGHTWHITE_EX, end='')
+    for i in range(5):
+        print(asyncio.run(get('https://codeforces.com/api/contest.list'))[:40])
