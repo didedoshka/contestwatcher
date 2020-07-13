@@ -10,15 +10,13 @@ url = 'https://atcoder.jp/home'
 host = 'https://atcoder.jp'
 
 
-async def fetch(session, url):
-    async with session.get(url) as response:
-        return await response.text()
-
-
 async def get_html(url):
     async with aiohttp.ClientSession() as session:
-        html = await fetch(session, url)
-        return html
+        async with session.get(url) as response:
+            if response.status == 404:
+                raise Exception('404. Not found')
+            html = await response.text()
+            return html
 
 
 async def get_last():
@@ -78,11 +76,12 @@ async def are_rating_changes_out(url):
 async def check_username(username):
     try:
         html = await get_html(host + f'/users/{username}')
+        soup = BeautifulSoup(html, features='html.parser')
+        a = soup.find('a', class_='username')
+        return a.find('span').text
     except Exception as e:
         return False
-    soup = BeautifulSoup(html, features='html.parser')
-    a = soup.find('a', class_='username')
-    return a.find('span').text
+
 
 
 async def get_rating(username):
@@ -146,13 +145,13 @@ async def main():
     for username in users:
         ratings.append(asyncio.create_task(get_rating(username)))
 
-
     output = []
 
     for t in ratings:
         rating = await t
         output.append(rating)
 
+    print(*users, sep=', ')
     print(*output)
 
 

@@ -98,7 +98,7 @@ async def get_upcoming():
     try:
         upcoming = []
         upcoming.extend(await atcoder.parse_upcoming())
-        upcoming.extend(codeforces.get_upcoming())
+        upcoming.extend(await codeforces.get_upcoming())
 
         upcoming.sort()
 
@@ -144,19 +144,49 @@ async def remove_cf_from_db(handles, message: types.Message):
     return handles_to_remove, not_existing_handles, not_in_handle_list
 
 
+# async def remove_ac_from_db(usernames, message: types.Message):
+#     usernames_to_remove = []
+#     not_existing_usernames = []
+#     not_in_username_list = []
+#
+#     for username in usernames:
+#         username = username.lstrip(' ')
+#         ac_username = await atcoder.check_username(username)
+#         if not ac_username:
+#             not_existing_usernames.append(username.lstrip(' '))
+#             continue
+#         if ac_username in db['id'][str(message.chat['id'])]['ac_usernames']:
+#             usernames_to_remove.append(ac_username)
+#         else:
+#             not_in_username_list.append(ac_username)
+#
+#     for username in usernames_to_remove:
+#         if username in db['id'][str(message.chat['id'])]['ac_usernames']:
+#             db['id'][str(message.chat['id'])]['ac_usernames'].pop(username)
+#
+#     save_json()
+#     await add_log(f'ac users were removed ({str(message.chat["id"])}) {usernames_to_remove}')
+#     return usernames_to_remove, not_existing_usernames, not_in_username_list
+
+
 async def remove_ac_from_db(usernames, message: types.Message):
+    now = time.time()
     usernames_to_remove = []
     not_existing_usernames = []
     not_in_username_list = []
+    users = []
 
     for username in usernames:
-        username = username.lstrip(' ')
-        ac_username = await atcoder.check_username(username)
+        users.append((username, dp.loop.create_task(atcoder.check_username(username.lstrip(' ')))))
+
+    for inputted, username in users:
+        ac_username = await username
         if not ac_username:
-            not_existing_usernames.append(username.lstrip(' '))
+            not_existing_usernames.append(inputted.lstrip(' '))
             continue
         if ac_username in db['id'][str(message.chat['id'])]['ac_usernames']:
             usernames_to_remove.append(ac_username)
+            continue
         else:
             not_in_username_list.append(ac_username)
 
@@ -165,7 +195,7 @@ async def remove_ac_from_db(usernames, message: types.Message):
             db['id'][str(message.chat['id'])]['ac_usernames'].pop(username)
 
     save_json()
-    await add_log(f'ac users were removed ({str(message.chat["id"])}) {usernames_to_remove}')
+    await add_log(f'ac users were removed ({str(message.chat["id"])}) {usernames_to_remove} in {time.time() - now}s')
     return usernames_to_remove, not_existing_usernames, not_in_username_list
 
 
@@ -210,25 +240,34 @@ async def add_cf_to_db(handles, message: types.Message):
 
 
 async def add_ac_to_db(usernames, message: types.Message):
+    now = time.time()
     usernames_to_add = []
     not_existing_usernames = []
     already_added_usernames = []
+    users = []
+
     for username in usernames:
-        username = username.lstrip(' ')
-        ac_username = await atcoder.check_username(username)
+        users.append((username, dp.loop.create_task(atcoder.check_username(username.lstrip(' ')))))
+
+    for inputted, username in users:
+        ac_username = await username
         if not ac_username:
-            not_existing_usernames.append(username.lstrip(' '))
+            not_existing_usernames.append(inputted.lstrip(' '))
             continue
         if ac_username in db['id'][str(message.chat['id'])]['ac_usernames']:
             already_added_usernames.append(ac_username)
             continue
         else:
             usernames_to_add.append(ac_username)
+    ratings = []
     for username in usernames_to_add:
+        ratings.append((username, dp.loop.create_task(atcoder.get_rating(username))))
+
+    for username, rating in ratings:
         # print(username)
-        db['id'][str(message.chat['id'])]['ac_usernames'][username] = await atcoder.get_rating(username)
+        db['id'][str(message.chat['id'])]['ac_usernames'][username] = await rating
     save_json()
-    await add_log(f'ac users were added ({str(message.chat["id"])}) {usernames_to_add}')
+    await add_log(f'ac users were added ({str(message.chat["id"])}) {usernames_to_add} in {time.time() - now}s')
     return usernames_to_add, not_existing_usernames, already_added_usernames
 
 
