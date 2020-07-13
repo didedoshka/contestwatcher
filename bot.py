@@ -819,11 +819,13 @@ async def load_json_and_db():
     global log
     db = json.load(open("db.json", 'r'))
     log = json.load(open("log.json", 'r'))
+    load_json()
 
 
 if __name__ == '__main__':
     dp.loop.create_task(json_creator.check())
     dp.loop.create_task(load_json_and_db())
+
     # dp.loop.create_task(get_upcoming())
     dp.loop.create_task(get_changes(6000))
     dp.loop.create_task(send_rating_changes(300))
