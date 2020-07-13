@@ -151,7 +151,7 @@ async def remove_cf_from_db(handles, message: types.Message):
 
     save_json()
     await add_log(
-        f'cf users were added ({str(message.chat["id"])}) {handles_to_remove} in {"%.3f" % (time.time() - now)}s')
+        f'cf users were removed ({str(message.chat["id"])}) {handles_to_remove} in {"%.3f" % (time.time() - now)}s')
     return handles_to_remove, not_existing_handles, not_in_handle_list
 
 
