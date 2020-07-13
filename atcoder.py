@@ -78,7 +78,7 @@ async def are_rating_changes_out(url):
 async def check_username(username):
     try:
         html = await get_html(host + f'/users/{username}')
-    except urllib.error.HTTPError:
+    except Exception as e:
         return False
     soup = BeautifulSoup(html, features='html.parser')
     a = soup.find('a', class_='username')
