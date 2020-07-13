@@ -650,7 +650,7 @@ async def main(message: types.Message):
                 added_and_non_existing += f'1 handle is already in your handle list:\n<a><b>{already_added_handles[0]}</b></a>\n'
             else:
                 added_and_non_existing += f'{len(already_added_handles)} handles are already in your handle ' \
-                                          f'list:\n<a><b>' \ 
+                                          f'list:\n<a><b>' \
                                           f'{", ".join(sorted(already_added_handles, key=lambda a: a.lower()))}</b></a>\n'
 
             if len(not_existing_handles) == 0:

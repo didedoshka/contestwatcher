@@ -2,14 +2,22 @@ from bs4 import BeautifulSoup
 import urllib.request
 import datetime
 import re
+import aiohttp
+import asyncio
 
 url = 'https://atcoder.jp/home'
 host = 'https://atcoder.jp'
 
 
-def get_html(url):
-    response = urllib.request.urlopen(url)
-    return response.read()
+async def fetch(session, url):
+    async with session.get(url) as response:
+        return await response.text()
+
+
+async def get_html(url):
+    async with aiohttp.ClientSession() as session:
+        html = await fetch(session, url)
+        print(html)
 
 
 async def get_last():
@@ -129,3 +137,7 @@ def parse_upcoming():
 
     return table
 
+
+if __name__ == '__main__':
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(get_html(url))
