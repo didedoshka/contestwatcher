@@ -146,8 +146,8 @@ async def remove_cf_from_db(handles, message: types.Message):
             not_in_handle_list.append(cf_handle)
             
     for handle in handles_to_remove:
-        if handle in db['id'][str(message.chat['id'])]['ac_handles']:
-            db['id'][str(message.chat['id'])]['ac_handles'].pop(handle)
+        if handle in db['id'][str(message.chat['id'])]['cf_handles']:
+            db['id'][str(message.chat['id'])]['cf_handles'].pop(handle)
 
     save_json()
     await add_log(
