@@ -3,7 +3,6 @@ import os
 import json
 
 
-
 async def check():
     if not os.path.exists('db.json'):
         await create(['db.json'])
@@ -24,4 +23,3 @@ async def create(files):
         if file == 'log.json':
             log = {'log': []}
             json.dump(log, open('log.json', 'w'), indent=2)
-
