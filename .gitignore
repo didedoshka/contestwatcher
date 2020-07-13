@@ -1,3 +1,5 @@
 .idea
 __pycache__
 python
+db.json
+log.json

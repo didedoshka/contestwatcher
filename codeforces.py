@@ -2,8 +2,15 @@ import asyncio
 
 import requests
 import json
-import bot
 import datetime
+
+
+async def get_last():
+    a = requests.get('https://codeforces.com/api/contest.list')
+    all_codeforces_contests = json.loads(a.text)
+    for contest in all_codeforces_contests['result']:
+        if contest['phase'] == 'FINISHED':
+            return f'<a href="https://codeforces.com/contest/{contest["id"]}">{contest["name"]}</a>'
 
 
 async def get_rating(handle):
@@ -11,6 +18,7 @@ async def get_rating(handle):
     await asyncio.sleep(0.5)
     result = json.loads(a.text)
     return result['result'][0].get('rating', 0)
+
 
 async def check_handle(handle):
     a = requests.get(f'https://codeforces.com/api/user.info?handles={handle}')
@@ -20,11 +28,12 @@ async def check_handle(handle):
         return False
     return result['result'][0]['handle']
 
+
 def get_rating_changes(id):
     a = requests.get(f'https://codeforces.com/api/contest.ratingChanges?contestId={id}')
     result = json.loads(a.text)
     if result['status'] == 'FAILED':
-        if (result['comment'] == 'contestId: Rating changes are unavailable for this contest'):
+        if result['comment'] == 'contestId: Rating changes are unavailable for this contest':
             return False, False
         return False, True
     elif len(result['result']) == 0:
@@ -32,7 +41,9 @@ def get_rating_changes(id):
     else:
         return True, result['result']
 
+
 def get_upcoming():
+    import bot
     a = requests.get('https://codeforces.com/api/contest.list')
     all_codeforces_contests = json.loads(a.text)
     codeforces_contests = []
@@ -40,7 +51,7 @@ def get_upcoming():
     names = []
     durations = []
     for i in all_codeforces_contests['result']:
-        if (i['id'] == int(bot.db['last_codeforces']['name'][40:bot.db['last_codeforces']['name'].find('>') - 1])):
+        if i['id'] == int(bot.db['last_codeforces']['name'][40:bot.db['last_codeforces']['name'].find('>') - 1]):
             break
         codeforces_contests.append(i)
         times.append(datetime.datetime(1970, 1, 1) + datetime.timedelta(seconds=i['startTimeSeconds']))

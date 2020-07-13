@@ -7,9 +7,13 @@ import codeforces
 import datetime
 import sys
 import config
+import json_creator
 
-db = json.load(open("db.json", 'r'))
-log = json.load(open("log.json", 'r'))
+# loop = asyncio.get_event_loop()
+# loop.run_until_complete(json_creator.check())
+# loop.close()
+
+
 
 API_TOKEN = config.API_TOKEN
 
@@ -31,19 +35,21 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
+dp.loop.create_task(json_creator.check())
+
+db = json.load(open("db.json", 'r'))
+log = json.load(open("log.json", 'r'))
+
+
 
 async def add_log(string):
-    d = {}
-    d['time'] = datetime.datetime.now().isoformat()
-    d['value'] = string
+    d = {'time': datetime.datetime.now().isoformat(), 'value': string}
     log['log'].append(d)
     await save_log()
 
 
 def sync_add_log(string):
-    d = {}
-    d['time'] = datetime.datetime.now().isoformat()
-    d['value'] = string
+    d = {'time': datetime.datetime.now().isoformat(), 'value': string}
     log['log'].append(d)
     sync_save_log()
 
@@ -69,7 +75,7 @@ async def send_welcome(message: types.Message):
 
 
 async def add_person(message: types.Message):
-    if db['id'].get(str(message.chat['id'])) == None:
+    if db['id'].get(str(message.chat['id'])) is None:
         await add_log(f'person added to db ({str(message.chat["id"])})')
         db['id'][str(message.chat['id'])] = {"tz": 3,
                                              "status": 1,
@@ -623,7 +629,8 @@ async def main(message: types.Message):
                     raise ValueError
             except ValueError:
                 await message.answer(
-                    "It wasn\'t in the list. Send me amount of minutes before the contest you don\'t want to be notified anymore",
+                    "It wasn\'t in the list. Send me amount of minutes before the contest you don\'t want to be "
+                    "notified anymore",
                     reply_markup=types.ForceReply.create(selective=True), reply=True)
                 return
             db['id'][str(message.chat['id'])]["notifications"].remove(int(message.text))
@@ -642,7 +649,8 @@ async def main(message: types.Message):
             elif len(already_added_handles) == 1:
                 added_and_non_existing += f'1 handle is already in your handle list:\n<a><b>{already_added_handles[0]}</b></a>\n'
             else:
-                added_and_non_existing += f'{len(already_added_handles)} handles are already in your handle list:\n<a><b>' \
+                added_and_non_existing += f'{len(already_added_handles)} handles are already in your handle ' \
+                                          f'list:\n<a><b>' \ 
                                           f'{", ".join(sorted(already_added_handles, key=lambda a: a.lower()))}</b></a>\n'
 
             if len(not_existing_handles) == 0:
@@ -813,6 +821,7 @@ async def send_message(message):
 
 if __name__ == '__main__':
     load_json()
+    get_upcoming()
     dp.loop.create_task(get_changes(6000))
     dp.loop.create_task(send_rating_changes(300))
     dp.loop.create_task(check_changes(60))

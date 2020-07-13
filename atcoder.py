@@ -2,8 +2,6 @@ from bs4 import BeautifulSoup
 import urllib.request
 import datetime
 import re
-import bot
-import asyncio
 
 url = 'https://atcoder.jp/home'
 host = 'https://atcoder.jp'
@@ -131,6 +129,3 @@ def parse_upcoming():
 
     return table
 
-
-if __name__ == '__main__':
-    print(get_rating_changes(bot.db['last_atcoder']['name'][9:bot.db['last_atcoder']['name'].find('>') - 1]))
