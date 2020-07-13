@@ -4,6 +4,7 @@ import datetime
 import re
 import aiohttp
 import asyncio
+import time
 
 url = 'https://atcoder.jp/home'
 host = 'https://atcoder.jp'
@@ -17,11 +18,11 @@ async def fetch(session, url):
 async def get_html(url):
     async with aiohttp.ClientSession() as session:
         html = await fetch(session, url)
-        print(html)
+        return html
 
 
 async def get_last():
-    html = get_html(url)
+    html = await get_html(url)
     soup = BeautifulSoup(html, features='html.parser')
     table = soup.find('div', id='contest-table-recent')
     table = table.find('tbody')
@@ -32,7 +33,7 @@ async def get_last():
 
 
 async def get_rating_change(url, user):
-    html = get_html(f'{host}/users/{user}/history')
+    html = await get_html(f'{host}/users/{user}/history')
     soup = BeautifulSoup(html, features='html.parser')
     table = soup.find('table', id='history')
     if table is None:
@@ -50,19 +51,19 @@ async def get_rating_change(url, user):
 
 
 async def are_rating_changes_out(url):
-    html = get_html(f'{url}/submissions')
+    html = await get_html(f'{url}/submissions')
 
     soup = BeautifulSoup(html, features='html.parser')
     ul = soup.find('ul', class_='pagination pagination-sm mt-0 mb-1')
     a = ul.find_all('a')[-1]
 
-    html = get_html(host + str(a)[9:str(a).find('>') - 1])
+    html = await get_html(host + str(a)[9:str(a).find('>') - 1])
     soup = BeautifulSoup(html, features='html.parser')
     table = soup.find('table', class_='table table-bordered table-striped small th-center')
     tbody = table.find('tbody')
     tr = tbody.find_all('tr')[0]
     user = tr.find_all('a')[1]['href']
-    html = get_html(f'{host}{user}/history')
+    html = await get_html(f'{host}{user}/history')
     # html = get_html(f'{host}/users/NToneE/history')
     soup = BeautifulSoup(html, features='html.parser')
     table = soup.find('table', id='history')
@@ -76,7 +77,7 @@ async def are_rating_changes_out(url):
 
 async def check_username(username):
     try:
-        html = get_html(host + f'/users/{username}')
+        html = await get_html(host + f'/users/{username}')
     except urllib.error.HTTPError:
         return False
     soup = BeautifulSoup(html, features='html.parser')
@@ -85,7 +86,7 @@ async def check_username(username):
 
 
 async def get_rating(username):
-    html = get_html(host + f'/users/{username}')
+    html = await get_html(host + f'/users/{username}')
     soup = BeautifulSoup(html, features='html.parser')
     div = soup.find('div', class_='col-md-9 col-sm-12')
     table = div.find('table', class_='dl-table')
@@ -97,8 +98,8 @@ async def get_rating(username):
     return 0
 
 
-def find_duration(url):
-    html = get_html(url)
+async def find_duration(url):
+    html = await get_html(url)
     soup = BeautifulSoup(html, features='html.parser')
     try:
         return soup.find('li', text=re.compile('Duration:*')).contents[0][10:]
@@ -106,8 +107,8 @@ def find_duration(url):
         return '0'
 
 
-def parse_upcoming():
-    html = get_html(url)
+async def parse_upcoming():
+    html = await get_html(url)
     soup = BeautifulSoup(html, features='html.parser')
     table = soup.find('div', id='contest-table-upcoming')
     table = table.find('tbody')
@@ -128,7 +129,7 @@ def parse_upcoming():
 
     for i in range(len(names)):
         names[i] = str(names[i])[:9] + host + str(names[i])[9:]
-        durations.append(find_duration(str(names[i])[9:str(names[i]).find('>') - 1]))
+        durations.append(await find_duration(str(names[i])[9:str(names[i]).find('>') - 1]))
 
     table = []
     contest_type = 'ac'
@@ -139,5 +140,6 @@ def parse_upcoming():
 
 
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(get_html(url))
+    now = time.time()
+    print(asyncio.run(parse_upcoming()))
+    print(time.time() - now)

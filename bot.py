@@ -8,11 +8,11 @@ import datetime
 import sys
 import config
 import json_creator
+import time
 
 # loop = asyncio.get_event_loop()
 # loop.run_until_complete(json_creator.check())
 # loop.close()
-
 
 
 API_TOKEN = config.API_TOKEN
@@ -39,7 +39,6 @@ dp.loop.create_task(json_creator.check())
 
 db = json.load(open("db.json", 'r'))
 log = json.load(open("log.json", 'r'))
-
 
 
 async def add_log(string):
@@ -100,10 +99,10 @@ def load_json():
         db['contests'][i][0] = datetime.datetime.fromisoformat(db['contests'][i][0])
 
 
-def get_upcoming():
+async def get_upcoming():
     try:
         upcoming = []
-        upcoming.extend(atcoder.parse_upcoming())
+        upcoming.extend(await atcoder.parse_upcoming())
         upcoming.extend(codeforces.get_upcoming())
 
         upcoming.sort()
@@ -427,7 +426,7 @@ async def send_rating_changes(wait_for):
 async def get_changes(wait_for):
     while True:
         await asyncio.sleep(wait_for)
-        get_upcoming()
+        await get_upcoming()
         await add_log('changes were gotten')
 
 
@@ -438,7 +437,7 @@ async def check_changes(wait_for):
         upcoming = db['contests']
         for contest in upcoming:
             if int((contest[0] - datetime.datetime.utcnow()) / datetime.timedelta(minutes=1)) == 0:
-                get_upcoming()
+                await get_upcoming()
                 if contest[3] == 'cf':
                     db['last_codeforces']['name'] = contest[1]
                     db['last_codeforces']['status'] = 0
@@ -512,8 +511,9 @@ async def refresh(message: types.Message):
         await add_log(f'he tried to refresh ({message.chat["id"]})')
         return
     new_message = await message.reply('<a><b>Processing...</b></a>', parse_mode='HTML')
-    get_upcoming()
-    await new_message.edit_text('<a><b>Done</b></a>', parse_mode='HTML')
+    now = time.time()
+    await get_upcoming()
+    await new_message.edit_text(f'<a><b>Done in {"%.3f" % (time.time() - now)}s</b></a>', parse_mode='HTML')
 
 
 @dp.message_handler(commands=['status'])
@@ -821,7 +821,7 @@ async def send_message(message):
 
 if __name__ == '__main__':
     load_json()
-    get_upcoming()
+    # dp.loop.create_task(get_upcoming())
     dp.loop.create_task(get_changes(6000))
     dp.loop.create_task(send_rating_changes(300))
     dp.loop.create_task(check_changes(60))
