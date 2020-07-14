@@ -535,13 +535,12 @@ async def send_logs(message: types.Message):
         await add_log(f'he tried to get logs ({message.chat["id"]})')
         return
     amount = int(message.text.split()[1])
-    await add_log(f'{amount} logs were sent')
     reply_message = ''
     if amount > len(log['log']):
         amount = 0
     for one_log in log['log'][-amount:]:
-        reply_message += f'{one_log["time"]} : {one_log["value"]}\n'
-    await message.reply(reply_message)
+        reply_message += f'{datetime.datetime.fromisoformat(one_log["time"]).strftime("%H.%M.%S")}: {one_log["value"]}\n'
+    await message.reply(reply_message, parse_mode='HTML')
 
 
 @dp.message_handler(commands=['refresh'])
