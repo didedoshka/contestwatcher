@@ -11,7 +11,7 @@ host = 'https://atcoder.jp'
 
 
 async def get_html(url):
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
         async with session.get(url) as response:
             if response.status == 404:
                 raise Exception('404. Not found')
@@ -81,7 +81,6 @@ async def check_username(username):
         return a.find('span').text
     except Exception as e:
         return False
-
 
 
 async def get_rating(username):

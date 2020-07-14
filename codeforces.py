@@ -1,5 +1,9 @@
 import asyncio
 import time
+from typing import List
+
+from asyncio.exceptions import TimeoutError
+
 from colorama import Fore
 import aiohttp
 import requests
@@ -8,7 +12,7 @@ import datetime
 
 
 async def get(url):
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
         async with session.get(url) as response:
             return await response.text()
 
@@ -36,9 +40,42 @@ async def check_handle(handle):
     return result['result'][0]['handle']
 
 
-def get_rating_changes(id):
-    a = requests.get(f'https://codeforces.com/api/contest.ratingChanges?contestId={id}')
-    result = json.loads(a.text)
+async def check_handles(handles: List):
+    try:
+        a = await get(f'https://codeforces.com/api/user.info?handles={";".join(handles)}')
+    except TimeoutError:
+        raise TimeoutError('Timeout Error: check_handles()')
+    result = json.loads(a)
+    if result['status'] == 'FAILED':
+        bad_one = result['comment'][26:result['comment'].find('not') - 1]
+        bad_index = handles.index(bad_one)
+        good_ones = handles[:bad_index]
+        left = handles[bad_index + 1:]
+        return bad_one, good_ones, left
+    else:
+        return None, handles, []
+
+
+async def get_multiple_ratings(handles: List):
+    try:
+        a = await get(f'https://codeforces.com/api/user.info?handles={";".join(handles)}')
+    except TimeoutError:
+        raise TimeoutError('Timeout Error: get_multiple_ratings()')
+    result = json.loads(a)
+    if result['status'] != 'FAILED':
+        users = []
+        for user in result['result']:
+            users.append((user['handle'], user.get('rating', 0)))
+        return users
+    return []
+
+
+async def get_rating_changes(id):
+    try:
+        a = await get(f'https://codeforces.com/api/contest.ratingChanges?contestId={id}')
+    except TimeoutError:
+        raise TimeoutError('Timeout Error: get_rating_changes()')
+    result = json.loads(a)
     if result['status'] == 'FAILED':
         if result['comment'] == 'contestId: Rating changes are unavailable for this contest':
             return False, False
@@ -51,9 +88,10 @@ def get_rating_changes(id):
 
 async def get_upcoming():
     import bot
-
-    a = await get('https://codeforces.com/api/contest.list')
-
+    try:
+        a = await get('https://codeforces.com/api/contest.list')
+    except TimeoutError:
+        raise TimeoutError('Timeout Error: get_upcoming()')
     all_codeforces_contests = json.loads(a)
     codeforces_contests = []
     times = []
@@ -76,10 +114,4 @@ async def get_upcoming():
 
 
 if __name__ == '__main__':
-    for i in range(5):
-        print(asyncio.run(get('https://codeforces.com/api/contest.list'))[:40])
-    time.sleep(0.5)
-    print(Fore.BLUE + 'Sleeping')
-    print(Fore.LIGHTWHITE_EX, end='')
-    for i in range(5):
-        print(asyncio.run(get('https://codeforces.com/api/contest.list'))[:40])
+    print(asyncio.run(get('https://codeforces.com/api/contest.list')))
