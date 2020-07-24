@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from aiogram import Bot, Dispatcher, executor, types
+from aiogram import Bot, Dispatcher, executor, types, exceptions
 import json
 import atcoder
 import codeforces
@@ -80,6 +80,13 @@ async def add_person(message: types.Message):
                                                  1440
                                              ], "cf_handles": {},
                                              "ac_usernames": {}}
+        save_json()
+
+
+async def remove_person(user):
+    if db['id'].get(user) is not None:
+        await add_log(f'person removed from db ({user})')
+        db['id'].pop(user)
         save_json()
 
 
@@ -403,13 +410,18 @@ async def send_cf_rating_changes():
                 for change in changes:
                     message += f'<a><b>{change[3]}</b></a>\n{change[1]} -> {change[2]} ({"+" if change[0] > 0 else ""}{change[0]})\n\n'
                 await add_log(f'rating changes were sent to ({user})')
-                if db['id'][user]['status'] == 2:
-                    await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True,
-                                           disable_notification=True)
-                elif db['id'][user]['status'] == 1:
-                    await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True)
-                else:
-                    pass
+                try:
+                    if db['id'][user]['status'] == 2:
+                        await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True,
+                                               disable_notification=True)
+                    elif db['id'][user]['status'] == 1:
+                        await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True)
+                    else:
+                        pass
+                except exceptions.BotBlocked:
+                    await remove_person(user)
+                except exceptions.BotKicked:
+                    await remove_person(user)
 
         save_json()
 
@@ -474,17 +486,17 @@ async def check_changes(wait_for):
         await asyncio.sleep(wait_for)
         upcoming = db['contests']
         for contest in upcoming:
-            if int((contest[0] - datetime.datetime.utcnow()) / datetime.timedelta(minutes=1)) == 0:
-                try:
-                    await get_upcoming()
-                finally:
-                    pass
+            if int((contest[0] - datetime.datetime.utcnow()) / datetime.timedelta(minutes=1)) <= 0:
                 if contest[3] == 'cf':
                     db['last_codeforces']['name'] = contest[1]
                     db['last_codeforces']['status'] = 0
                 else:
                     db['last_atcoder']['name'] = contest[1]
                     db['last_atcoder']['status'] = 0
+                try:
+                    await get_upcoming()
+                finally:
+                    pass
         for user in db['id']:
             if db['id'][user]['status'] == 0:
                 continue
@@ -521,11 +533,16 @@ async def check_changes(wait_for):
                                 message += f'{notification} minutes'
 
                         await add_log(f'notification was sent to {user}')
-                        if db['id'][user]['status'] == 1:
-                            await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True)
-                        else:
-                            await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True,
-                                                   disable_notification=True)
+                        try:
+                            if db['id'][user]['status'] == 1:
+                                await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True)
+                            else:
+                                await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True,
+                                                       disable_notification=True)
+                        except exceptions.BotBlocked:
+                            await remove_person(user)
+                        except exceptions.BotKicked:
+                            await remove_person(user)
         # print('I checked and sent everybody a notification')
 
 
