@@ -9,6 +9,7 @@ import sys
 import config
 import json_creator
 import time
+import statistics
 
 API_TOKEN = config.API_TOKEN
 
@@ -540,6 +541,19 @@ async def send_logs(message: types.Message):
         amount = 0
     for one_log in log['log'][-amount:]:
         reply_message += f'{datetime.datetime.fromisoformat(one_log["time"]).strftime("%H.%M.%S")}: {one_log["value"]}\n'
+    await message.reply(reply_message, parse_mode='HTML')
+
+
+@dp.message_handler(commands=['stats'])
+async def send_logs(message: types.Message):
+    if str(message.chat['id']) != "818537853":
+        await message.reply('You\'re not an administrator here')
+        await add_log(f'he tried to get statistics ({message.chat["id"]})')
+        return
+    stats = await statistics.get_statistics(db)
+
+    reply_message = f'Bot users: {stats[0]}\nCF Handles: {stats[1]}\nAC Usernames: {stats[2]}'
+
     await message.reply(reply_message, parse_mode='HTML')
 
 
