@@ -152,31 +152,6 @@ async def remove_cf_from_db(handles, message: types.Message):
     return handles_to_remove, not_existing_handles, not_in_handle_list
 
 
-# async def remove_ac_from_db(usernames, message: types.Message):
-#     usernames_to_remove = []
-#     not_existing_usernames = []
-#     not_in_username_list = []
-#
-#     for username in usernames:
-#         username = username.lstrip(' ')
-#         ac_username = await atcoder.check_username(username)
-#         if not ac_username:
-#             not_existing_usernames.append(username.lstrip(' '))
-#             continue
-#         if ac_username in db['id'][str(message.chat['id'])]['ac_usernames']:
-#             usernames_to_remove.append(ac_username)
-#         else:
-#             not_in_username_list.append(ac_username)
-#
-#     for username in usernames_to_remove:
-#         if username in db['id'][str(message.chat['id'])]['ac_usernames']:
-#             db['id'][str(message.chat['id'])]['ac_usernames'].pop(username)
-#
-#     save_json()
-#     await add_log(f'ac users were removed ({str(message.chat["id"])}) {usernames_to_remove}')
-#     return usernames_to_remove, not_existing_usernames, not_in_username_list
-
-
 async def remove_ac_from_db(usernames, message: types.Message):
     now = time.time()
     usernames_to_remove = []
@@ -409,19 +384,20 @@ async def send_cf_rating_changes():
             if len(changes) != 0:
                 for change in changes:
                     message += f'<a><b>{change[3]}</b></a>\n{change[1]} -> {change[2]} ({"+" if change[0] > 0 else ""}{change[0]})\n\n'
-                await add_log(f'rating changes were sent to ({user})')
+
                 try:
                     if db['id'][user]['status'] == 2:
                         await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True,
                                                disable_notification=True)
+                        await add_log(f'rating changes were sent to ({user})')
                     elif db['id'][user]['status'] == 1:
                         await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True)
+                        await add_log(f'rating changes were sent to ({user})')
                     else:
                         pass
-                except exceptions.BotBlocked:
+                except Exception as e:
                     await remove_person(user)
-                except exceptions.BotKicked:
-                    await remove_person(user)
+                    await bot.send_message(818537853, f"{e}")
 
         save_json()
 
@@ -445,15 +421,19 @@ async def send_ac_rating_changes():
                     changes.sort(reverse=True)
                     for change in changes:
                         message += f'<a><b>{change[3]}</b></a>\n{change[1]} -> {change[2]} ({"+" if change[0] > 0 else ""}{change[0]})\n\n'
-
-                    await add_log(f'rating changes were sent to ({user})')
-                    if db['id'][user]['status'] == 2:
-                        await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True,
-                                               disable_notification=True)
-                    elif db['id'][user]['status'] == 1:
-                        await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True)
-                    else:
-                        pass
+                    try:
+                        if db['id'][user]['status'] == 2:
+                            await add_log(f'rating changes were sent to ({user})')
+                            await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True,
+                                                   disable_notification=True)
+                        elif db['id'][user]['status'] == 1:
+                            await add_log(f'rating changes were sent to ({user})')
+                            await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True)
+                        else:
+                            pass
+                    except Exception as e:
+                        await remove_person(user)
+                        await bot.send_message(818537853, f"{e}")
             save_json()
         else:
             await add_log(f"Rating changes for {db['last_atcoder']['name']} aren\'t out yet")
@@ -896,7 +876,7 @@ async def try_getting_upcoming():
     try:
         await get_upcoming()
     except Exception as e:
-        pass
+        print(e)
 
 
 if __name__ == '__main__':
