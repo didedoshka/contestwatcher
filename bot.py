@@ -473,6 +473,8 @@ async def check_changes(wait_for):
                 else:
                     db['last_atcoder']['name'] = contest[1]
                     db['last_atcoder']['status'] = 0
+                await bot.send_message(config.ADMIN, f"new contest is set as the last one:\n{contest[2]}")
+                await add_log(f"new contest is set as the last one:\n{contest[2]}")
                 try:
                     await get_upcoming()
                 finally:
@@ -862,9 +864,6 @@ async def main(message: types.Message):
                                 f'{len(removed_usernames)} usernames were removed:\n<a><b>' \
                                 f'{", ".join(sorted(removed_usernames, key=lambda a: a.lower()))}</b></a>'
             await new_message.edit_text(reply_message, parse_mode='HTML')
-
-        else:
-            await message.answer(start_message)
 
 
 async def send_message(message):
