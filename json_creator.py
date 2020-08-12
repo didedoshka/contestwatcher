@@ -14,14 +14,9 @@ def check():
 
 
 async def create(files):
-    import codeforces
-    import atcoder
     for file in files:
         if file == 'db.json':
-            cf_name = await codeforces.get_last()
-            ac_name = await atcoder.get_last()
-            db = {'id': {}, 'contests': [], 'last_codeforces': {'name': cf_name, 'status': 1},
-                  'last_atcoder': {'name': ac_name, 'status': 1}}
+            db = {'id': {}, 'contests': [], 'rating_changes': []}
             json.dump(db, open('db.json', 'w'), indent=2)
         if file == 'log.json':
             log = {'log': []}
