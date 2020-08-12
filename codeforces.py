@@ -7,6 +7,10 @@ import json
 import datetime
 
 
+async def get_id(a):
+    return a[40:a.find('>') - 1]
+
+
 async def get_last():
     a = requests.get('https://codeforces.com/api/contest.list')
     all_codeforces_contests = json.loads(a.text)
@@ -49,15 +53,14 @@ async def get_upcoming():
         async with session.get('https://codeforces.com/api/contest.list') as response:
             a = await response.text()
 
-    import bot
-
     all_codeforces_contests = json.loads(a)
     codeforces_contests = []
     times = []
     names = []
     durations = []
     for i in all_codeforces_contests['result']:
-        if i['id'] == int(bot.db['last_codeforces']['name'][40:bot.db['last_codeforces']['name'].find('>') - 1]):
+        if datetime.datetime(1970, 1, 1) + datetime.timedelta(
+                seconds=i['startTimeSeconds']) <= datetime.datetime.utcnow():
             break
         codeforces_contests.append(i)
         times.append(datetime.datetime(1970, 1, 1) + datetime.timedelta(seconds=i['startTimeSeconds']))
@@ -72,7 +75,12 @@ async def get_upcoming():
     return table
 
 
+async def main():
+    a = await get_upcoming()
+    print(await(get_id(a[0][1])))
+
+
 if __name__ == '__main__':
     now = time.time()
-    print(asyncio.run(get_upcoming()))
+    asyncio.run(main())
     print(time.time() - now)

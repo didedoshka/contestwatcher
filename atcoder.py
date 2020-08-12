@@ -10,6 +10,10 @@ url = 'https://atcoder.jp/home'
 host = 'https://atcoder.jp'
 
 
+async def get_url(a):
+    return a[9:a.find('>') - 1]
+
+
 async def get_html(url):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
@@ -55,7 +59,7 @@ async def are_rating_changes_out(url):
     ul = soup.find('ul', class_='pagination pagination-sm mt-0 mb-1')
     a = ul.find_all('a')[-1]
 
-    html = await get_html(host + str(a)[9:str(a).find('>') - 1])
+    html = await get_html(host + await get_url(str(a)))
     soup = BeautifulSoup(html, features='html.parser')
     table = soup.find('table', class_='table table-bordered table-striped small th-center')
     tbody = table.find('tbody')
@@ -81,7 +85,6 @@ async def check_username(username):
         return a.find('span').text
     except Exception as e:
         return False
-
 
 
 async def get_rating(username):
@@ -128,7 +131,7 @@ async def parse_upcoming():
 
     for i in range(len(names)):
         names[i] = str(names[i])[:9] + host + str(names[i])[9:]
-        durations.append(await find_duration(str(names[i])[9:str(names[i]).find('>') - 1]))
+        durations.append(await find_duration(await get_url(names[i])))
 
     table = []
     contest_type = 'ac'
@@ -139,20 +142,8 @@ async def parse_upcoming():
 
 
 async def main():
-    users = ['tourist', 'ksun48', 'Um_nik', 'ecnerwala', 'apiad', 'mnbvmar', 'Petr', 'cospleermusora', 'LHiC',
-             'yutaka1999']
-    ratings = []
-    for username in users:
-        ratings.append(asyncio.create_task(get_rating(username)))
-
-    output = []
-
-    for t in ratings:
-        rating = await t
-        output.append(rating)
-
-    print(*users, sep=', ')
-    print(*output)
+    b = await parse_upcoming()
+    print(b)
 
 
 if __name__ == '__main__':

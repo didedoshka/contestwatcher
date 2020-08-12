@@ -12,6 +12,7 @@ import time
 import statistics
 
 API_TOKEN = config.API_TOKEN
+persons_to_remove = []
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -85,9 +86,15 @@ async def add_person(message: types.Message):
 
 async def remove_person(user):
     if db['id'].get(user) is not None:
+        await add_log(f'person added to "remove person" list ({user})')
+        persons_to_remove.append(user)
+
+
+async def remove_persons_from_db():
+    for user in persons_to_remove:
         await add_log(f'person removed from db ({user})')
         db['id'].pop(user)
-        save_json()
+    save_json()
 
 
 # start
@@ -126,6 +133,12 @@ def save_json():
         db['contests'][i][0] = datetime.datetime.isoformat(db['contests'][i][0])
     json.dump(db, open('db.json', 'w'), indent=2)
     load_json()
+
+
+async def save_json_periodically(wait_for):
+    while True:
+        save_json()
+        await asyncio.sleep(wait_for)
 
 
 async def remove_cf_from_db(handles, message: types.Message):
@@ -354,63 +367,59 @@ async def remove_notification(message: types.Message):
                         reply_markup=types.ForceReply.create(selective=True), reply=True)
 
 
-async def send_cf_rating_changes():
-    if db['last_codeforces']['status'] == 0:
-        rating_changes_status, rating_changes = codeforces.get_rating_changes(
-            int(db['last_codeforces']['name'][40:db['last_codeforces']['name'].find('>') - 1]))
-        if not rating_changes_status:
-            if not rating_changes:
-                await add_log('contest happened to be unrated')
-                db['last_codeforces']['status'] = 1
-                save_json()
-            else:
-                await add_log('rating changes aren\'t out yet')
-            return
-        db['last_codeforces']['status'] = 1
+async def send_cf_rating_changes(contest: str):
+    rating_changes_status, rating_changes = codeforces.get_rating_changes(
+        int(await codeforces.get_id(contest)))
+    if not rating_changes_status:
+        if not rating_changes:
+            await add_log('contest happened to be unrated')
+            return 1
+        else:
+            await add_log('rating changes aren\'t out yet')
+        return
 
-        for user in db['id']:
-            message = 'Rating changes for ' + db['last_codeforces']['name'] + ' are out:\n\n'
-            changes = []
-            for handle in db['id'][user]['cf_handles']:
-                # print(handle)
-                for cf_user in rating_changes:
-                    # print(cf_user['handle'])
-                    if cf_user['handle'] == handle:
-                        changes.append([cf_user['newRating'] - cf_user['oldRating'], cf_user['oldRating'],
-                                        cf_user['newRating'], handle])
-                        db['id'][user]['cf_handles'][handle] = cf_user['newRating']
-                        break
-            changes.sort(reverse=True)
-            if len(changes) != 0:
-                for change in changes:
-                    message += f'<a><b>{change[3]}</b></a>\n{change[1]} -> {change[2]} ({"+" if change[0] > 0 else ""}{change[0]})\n\n'
+    for user in db['id']:
+        message = 'Rating changes for ' + contest + ' are out:\n\n'
+        changes = []
+        for handle in db['id'][user]['cf_handles']:
+            # print(handle)
+            for cf_user in rating_changes:
+                # print(cf_user['handle'])
+                if cf_user['handle'] == handle:
+                    changes.append([cf_user['newRating'] - cf_user['oldRating'], cf_user['oldRating'],
+                                    cf_user['newRating'], handle])
+                    db['id'][user]['cf_handles'][handle] = cf_user['newRating']
+                    break
+        changes.sort(reverse=True)
+        if len(changes) != 0:
+            for change in changes:
+                message += f'<a><b>{change[3]}</b></a>\n{change[1]} -> {change[2]} ({"+" if change[0] > 0 else ""}{change[0]})\n\n'
 
-                try:
-                    if db['id'][user]['status'] == 2:
-                        await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True,
-                                               disable_notification=True)
-                        await add_log(f'rating changes were sent to ({user})')
-                    elif db['id'][user]['status'] == 1:
-                        await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True)
-                        await add_log(f'rating changes were sent to ({user})')
-                    else:
-                        pass
-                except Exception as e:
-                    await remove_person(user)
-                    await bot.send_message(818537853, f"{e}")
+            try:
+                if db['id'][user]['status'] == 2:
+                    await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True,
+                                           disable_notification=True)
+                    await add_log(f'rating changes were sent to ({user})')
+                elif db['id'][user]['status'] == 1:
+                    await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True)
+                    await add_log(f'rating changes were sent to ({user})')
+                else:
+                    pass
+            except Exception as e:
+                await remove_person(user)
+                await bot.send_message(config.ADMIN, f"{e}")
 
-        save_json()
+    return 1
 
 
-async def send_ac_rating_changes():
-    if db['last_atcoder']['status'] == 0 and db['last_atcoder']['name'] == await atcoder.get_last():
-        if await atcoder.are_rating_changes_out(await get_atcoder_url(db['last_atcoder']['name'])):
-            db['last_atcoder']['status'] = 1
+async def send_ac_rating_changes(contest):
+    if contest == await atcoder.get_last():
+        if await atcoder.are_rating_changes_out(await atcoder.get_url(contest)):
             for user in db['id']:
-                message = 'Rating changes for ' + db['last_atcoder']['name'] + ' are out:\n\n'
+                message = 'Rating changes for ' + contest + ' are out:\n\n'
                 changes = []
                 for username in db['id'][user]['ac_usernames']:
-                    new_rating = await atcoder.get_rating_change(await get_atcoder_url(db['last_atcoder']['name']),
+                    new_rating = await atcoder.get_rating_change(await atcoder.get_url(contest),
                                                                  username)
                     if new_rating:
                         changes.append([new_rating - db['id'][user]['ac_usernames'][username],
@@ -433,21 +442,32 @@ async def send_ac_rating_changes():
                             pass
                     except Exception as e:
                         await remove_person(user)
-                        await bot.send_message(818537853, f"{e}")
-            save_json()
+                        await bot.send_message(config.ADMIN, f"{e}\n{user}")
+            return 1
         else:
-            await add_log(f"Rating changes for {db['last_atcoder']['name']} aren\'t out yet")
-
-
-async def get_atcoder_url(name):
-    return name[9:name.find('>') - 1]
+            await add_log(f"Rating changes for {contest} aren\'t out yet")
 
 
 async def send_rating_changes(wait_for):
     while True:
+        contests_to_delete = []
+        for contest, t in db["rating_changes"]:
+            if t == 'ac':
+                delete = await send_ac_rating_changes(contest)
+            else:
+                delete = await send_cf_rating_changes(contest)
+
+            if delete:
+                contests_to_delete.append([contest, t])
+
+        for contest in contests_to_delete:
+            db["rating_changes"].remove(contest)
+
+        save_json()
+
+        print(db["rating_changes"])
+
         await asyncio.sleep(wait_for)
-        await send_cf_rating_changes()
-        await send_ac_rating_changes()
 
 
 # get changes from server
@@ -464,21 +484,27 @@ async def get_changes(wait_for):
 async def check_changes(wait_for):
     while True:
         await asyncio.sleep(wait_for)
+        await remove_persons_from_db()
         upcoming = db['contests']
         for contest in upcoming:
             if int((contest[0] - datetime.datetime.utcnow()) / datetime.timedelta(minutes=1)) <= 0:
                 if contest[3] == 'cf':
-                    db['last_codeforces']['name'] = contest[1]
-                    db['last_codeforces']['status'] = 0
+                    if [contest[1], 'cf'] not in db["rating_changes"]:
+                        db['rating_changes'].append([contest[1], 'cf'])
+                        await bot.send_message(config.ADMIN,
+                                               f"new contest is added to rating_changes watching list: {contest[1]}")
+                        await add_log(f"new contest is added to rating_changes watching list: {contest[1]}")
                 else:
-                    db['last_atcoder']['name'] = contest[1]
-                    db['last_atcoder']['status'] = 0
-                await bot.send_message(config.ADMIN, f"new contest is set as the last one:\n{contest[2]}")
-                await add_log(f"new contest is set as the last one:\n{contest[2]}")
+                    if [contest[1], 'ac'] not in db["rating_changes"]:
+                        db['rating_changes'].append([contest[1], 'ac'])
+                        await bot.send_message(config.ADMIN,
+                                               f"new contest is added to rating_changes watching list: {contest[1]}")
+                        await add_log(f"new contest is added to rating_changes watching list: {contest[1]}")
+
                 try:
                     await get_upcoming()
-                finally:
-                    pass
+                except Exception as e:
+                    await add_log(f"upcoming wasn\'t gotten: {e}")
         for user in db['id']:
             if db['id'][user]['status'] == 0:
                 continue
@@ -521,16 +547,15 @@ async def check_changes(wait_for):
                             else:
                                 await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True,
                                                        disable_notification=True)
-                        except exceptions.BotBlocked:
+                        except Exception as e:
                             await remove_person(user)
-                        except exceptions.BotKicked:
-                            await remove_person(user)
+                            await add_log(f"during sending changes an exception occurred{e}")
         # print('I checked and sent everybody a notification')
 
 
 @dp.message_handler(commands=['logs'])
 async def send_logs(message: types.Message):
-    if str(message.chat['id']) != "818537853":
+    if str(message.chat['id']) != str(config.ADMIN):
         await message.reply('You\'re not an administrator here')
         await add_log(f'he tried to get logs ({message.chat["id"]})')
         return
@@ -545,7 +570,7 @@ async def send_logs(message: types.Message):
 
 @dp.message_handler(commands=['stats'])
 async def send_logs(message: types.Message):
-    if str(message.chat['id']) != "818537853":
+    if str(message.chat['id']) != str(config.ADMIN):
         await message.reply('You\'re not an administrator here')
         await add_log(f'he tried to get statistics ({message.chat["id"]})')
         return
@@ -558,7 +583,7 @@ async def send_logs(message: types.Message):
 
 @dp.message_handler(commands=['refresh'])
 async def refresh(message: types.Message):
-    if str(message.chat['id']) != "818537853":
+    if str(message.chat['id']) != str(config.ADMIN):
         await message.reply('You\'re not an administrator here')
         await add_log(f'he tried to refresh ({message.chat["id"]})')
         return
@@ -884,4 +909,5 @@ if __name__ == '__main__':
     dp.loop.create_task(get_changes(6000))
     dp.loop.create_task(send_rating_changes(300))
     dp.loop.create_task(check_changes(60))
+    dp.loop.create_task(save_json_periodically(60 * 30))
     executor.start_polling(dp, skip_updates=True)
