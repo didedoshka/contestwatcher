@@ -4,43 +4,25 @@ from typing import List
 
 from asyncio.exceptions import TimeoutError
 
-from colorama import Fore
 import aiohttp
 import requests
 import json
 import datetime
 
+lock = asyncio.Lock()
+
 
 async def get(url):
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
-        async with session.get(url) as response:
-            return await response.text()
-
-
-async def get_last():
-    a = requests.get('https://codeforces.com/api/contest.list')
-    all_codeforces_contests = json.loads(a.text)
-    for contest in all_codeforces_contests['result']:
-        if contest['phase'] == 'FINISHED':
-            return f'<a href="https://codeforces.com/contest/{contest["id"]}">{contest["name"]}</a>'
-
-
-async def get_rating(handle):
-    a = requests.get(f'https://codeforces.com/api/user.info?handles={handle}')
-    await asyncio.sleep(0.5)
-    result = json.loads(a.text)
-    return result['result'][0].get('rating', 0)
-
-
-async def check_handle(handle):
-    a = requests.get(f'https://codeforces.com/api/user.info?handles={handle}')
-    result = json.loads(a.text)
-    if result['status'] != 'OK':
-        return False
-    return result['result'][0]['handle']
+    async with lock:
+        await asyncio.sleep(0.2)
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
+            async with session.get(url) as response:
+                return await response.text()
 
 
 async def check_handles(handles: List):
+    if len(handles) == 0:
+        return None, [], []
     try:
         a = await get(f'https://codeforces.com/api/user.info?handles={";".join(handles)}')
     except TimeoutError:

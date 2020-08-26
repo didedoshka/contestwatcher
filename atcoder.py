@@ -62,7 +62,6 @@ async def are_rating_changes_out(url):
     tr = tbody.find_all('tr')[0]
     user = tr.find_all('a')[1]['href']
     html = await get_html(f'{host}{user}/history')
-    # html = get_html(f'{host}/users/NToneE/history')
     soup = BeautifulSoup(html, features='html.parser')
     table = soup.find('table', id='history')
     if table is None:

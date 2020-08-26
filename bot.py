@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from aiogram import Bot, Dispatcher, executor, types
+import re
 import json
 import atcoder
 import codeforces
@@ -121,69 +122,73 @@ def save_json():
 
 
 async def remove_cf_from_db(handles, message: types.Message):
-    now = time.time()
-    handles_to_remove = []
-    not_existing_handles = []
-    not_in_handle_list = []
-    users = []
+    try:
+        now = time.time()
+        handles_to_remove = []
+        not_existing_handles = []
+        not_in_handle_list = []
 
-    i = 0
-    for handle in handles:
-        i += 1
-        users.append((handle, dp.loop.create_task(codeforces.check_handle(handle.lstrip(' ')))))
-        if i % 5 == 0:
-            await asyncio.sleep(1)
+        bad_one = ''
+        left = [re.sub(r'[^A-Za-z0-9._-]', '', handle) for handle in handles]
+        while bad_one is not None:
+            bad_one, good_ones, left = await codeforces.check_handles(left)
+            if bad_one is not None:
+                not_existing_handles.append(bad_one)
+            handles_to_remove.extend(good_ones)
 
-    for inputted, handle in users:
-        cf_handle = await handle
-        if not cf_handle:
-            not_existing_handles.append(inputted.lstrip(' '))
-            continue
-        if cf_handle in db['id'][str(message.chat['id'])]['cf_handles']:
-            handles_to_remove.append(cf_handle)
-            continue
-        else:
-            not_in_handle_list.append(cf_handle)
+        handles_to_remove_from_handles_to_remove = []
 
-    for handle in handles_to_remove:
-        if handle in db['id'][str(message.chat['id'])]['cf_handles']:
+        for handle in handles_to_remove:
+            if handle not in db['id'][str(message.chat['id'])]['cf_handles']:
+                not_in_handle_list.append(handle)
+                handles_to_remove_from_handles_to_remove.append(handle)
+
+        for handle in handles_to_remove_from_handles_to_remove:
+            handles_to_remove.remove(handle)
+
+        for handle in handles_to_remove:
             db['id'][str(message.chat['id'])]['cf_handles'].pop(handle)
 
-    save_json()
-    await add_log(
-        f'cf users were removed ({str(message.chat["id"])}) {handles_to_remove} in {"%.3f" % (time.time() - now)}s')
-    return handles_to_remove, not_existing_handles, not_in_handle_list
+        save_json()
+        await add_log(
+            f'cf users were removed ({str(message.chat["id"])}) {handles_to_remove} in {time.time() - now:.3f}s')
+        return handles_to_remove, not_existing_handles, not_in_handle_list
+    except Exception as e:
+        await add_log(f'During removing cf handles exception was raised. {e}')
 
 
 async def remove_ac_from_db(usernames, message: types.Message):
-    now = time.time()
-    usernames_to_remove = []
-    not_existing_usernames = []
-    not_in_username_list = []
-    users = []
+    try:
+        now = time.time()
+        usernames_to_remove = []
+        not_existing_usernames = []
+        not_in_username_list = []
+        users = []
 
-    for username in usernames:
-        users.append((username, dp.loop.create_task(atcoder.check_username(username.lstrip(' ')))))
+        for username in usernames:
+            users.append((username, dp.loop.create_task(atcoder.check_username(username.lstrip(' ')))))
 
-    for inputted, username in users:
-        ac_username = await username
-        if not ac_username:
-            not_existing_usernames.append(inputted.lstrip(' '))
-            continue
-        if ac_username in db['id'][str(message.chat['id'])]['ac_usernames']:
-            usernames_to_remove.append(ac_username)
-            continue
-        else:
-            not_in_username_list.append(ac_username)
+        for inputted, username in users:
+            ac_username = await username
+            if not ac_username:
+                not_existing_usernames.append(inputted.lstrip(' '))
+                continue
+            if ac_username in db['id'][str(message.chat['id'])]['ac_usernames']:
+                usernames_to_remove.append(ac_username)
+                continue
+            else:
+                not_in_username_list.append(ac_username)
 
-    for username in usernames_to_remove:
-        if username in db['id'][str(message.chat['id'])]['ac_usernames']:
-            db['id'][str(message.chat['id'])]['ac_usernames'].pop(username)
+        for username in usernames_to_remove:
+            if username in db['id'][str(message.chat['id'])]['ac_usernames']:
+                db['id'][str(message.chat['id'])]['ac_usernames'].pop(username)
 
-    save_json()
-    await add_log(
-        f'ac users were removed ({str(message.chat["id"])}) {usernames_to_remove} in {"%.3f" % (time.time() - now)}s')
-    return usernames_to_remove, not_existing_usernames, not_in_username_list
+        save_json()
+        await add_log(
+            f'ac users were removed ({str(message.chat["id"])}) {usernames_to_remove} in {time.time() - now:.3f}s')
+        return usernames_to_remove, not_existing_usernames, not_in_username_list
+    except Exception as e:
+        await add_log(f'During removing ac usernames exception was raised. {e}')
 
 
 @dp.message_handler(commands=['remove_ac'])
@@ -212,17 +217,22 @@ async def add_cf_to_db(handles, message: types.Message):
         already_added_handles = []
 
         bad_one = ''
-        left = [handle.lstrip(" ") for handle in handles]
+        left = [re.sub(r'[^A-Za-z0-9._-]', '', handle) for handle in handles]
         while bad_one is not None:
             bad_one, good_ones, left = await codeforces.check_handles(left)
             if bad_one is not None:
                 not_existing_handles.append(bad_one)
             handles_to_add.extend(good_ones)
 
+        handles_to_remove_from_handles_to_add = []
+
         for handle in handles_to_add:
             if handle in db['id'][str(message.chat['id'])]['cf_handles']:
                 already_added_handles.append(handle)
-                handles_to_add.remove(handle)
+                handles_to_remove_from_handles_to_add.append(handle)
+
+        for handle in handles_to_remove_from_handles_to_add:
+            handles_to_add.remove(handle)
 
         handles_to_add_with_ratings = await codeforces.get_multiple_ratings(handles_to_add)
 
@@ -234,44 +244,45 @@ async def add_cf_to_db(handles, message: types.Message):
 
         save_json()
         await add_log(
-            f'cf users were added ({str(message.chat["id"])}) {handles_to_add} in {"%.3f" % (time.time() - now)}s')
+            f'cf users were added ({str(message.chat["id"])}) {handles_to_add} in {time.time() - now:.3f}s')
         return handles_to_add, not_existing_handles, already_added_handles
     except Exception as e:
         await add_log(f'During adding cf handles exception was raised. {e}')
-        raise e
 
 
 async def add_ac_to_db(usernames, message: types.Message):
-    now = time.time()
-    usernames_to_add = []
-    not_existing_usernames = []
-    already_added_usernames = []
-    users = []
+    try:
+        now = time.time()
+        usernames_to_add = []
+        not_existing_usernames = []
+        already_added_usernames = []
+        users = []
 
-    for username in usernames:
-        users.append((username, dp.loop.create_task(atcoder.check_username(username.lstrip(' ')))))
+        for username in usernames:
+            users.append((username, dp.loop.create_task(atcoder.check_username(username.lstrip(' ')))))
 
-    for inputted, username in users:
-        ac_username = await username
-        if not ac_username:
-            not_existing_usernames.append(inputted.lstrip(' '))
-            continue
-        if ac_username in db['id'][str(message.chat['id'])]['ac_usernames']:
-            already_added_usernames.append(ac_username)
-            continue
-        else:
-            usernames_to_add.append(ac_username)
-    ratings = []
-    for username in usernames_to_add:
-        ratings.append((username, dp.loop.create_task(atcoder.get_rating(username))))
+        for inputted, username in users:
+            ac_username = await username
+            if not ac_username:
+                not_existing_usernames.append(inputted.lstrip(' '))
+                continue
+            if ac_username in db['id'][str(message.chat['id'])]['ac_usernames']:
+                already_added_usernames.append(ac_username)
+                continue
+            else:
+                usernames_to_add.append(ac_username)
+        ratings = []
+        for username in usernames_to_add:
+            ratings.append((username, dp.loop.create_task(atcoder.get_rating(username))))
 
-    for username, rating in ratings:
-        # print(username)
-        db['id'][str(message.chat['id'])]['ac_usernames'][username] = await rating
-    save_json()
-    await add_log(
-        f'ac users were added ({str(message.chat["id"])}) {usernames_to_add} in {"%.3f" % (time.time() - now)}s')
-    return usernames_to_add, not_existing_usernames, already_added_usernames
+        for username, rating in ratings:
+            db['id'][str(message.chat['id'])]['ac_usernames'][username] = await rating
+        save_json()
+        await add_log(
+            f'ac users were added ({str(message.chat["id"])}) {usernames_to_add} in {time.time() - now:.3f}s')
+        return usernames_to_add, not_existing_usernames, already_added_usernames
+    except Exception as e:
+        await add_log(f'During removing ac usernames exception was raised. {e}')
 
 
 @dp.message_handler(commands=['add_cf'])
