@@ -1,6 +1,9 @@
 import asyncio
 import logging
+
 from aiogram import Bot, Dispatcher, executor, types, exceptions
+import re
+
 import json
 import atcoder
 import codeforces
@@ -142,57 +145,73 @@ async def save_json_periodically(wait_for):
 
 
 async def remove_cf_from_db(handles, message: types.Message):
-    handles_to_remove = []
-    not_existing_handles = []
-    not_in_handle_list = []
+    try:
+        now = time.time()
+        handles_to_remove = []
+        not_existing_handles = []
+        not_in_handle_list = []
 
-    for handle in handles:
-        cf_handle = await codeforces.check_handle(handle)
-        if not cf_handle:
-            not_existing_handles.append(handle.lstrip(' '))
-            continue
-        if cf_handle in db['id'][str(message.chat['id'])]['cf_handles']:
-            handles_to_remove.append(cf_handle)
-        else:
-            not_in_handle_list.append(cf_handle)
+        bad_one = ''
+        left = [re.sub(r'[^A-Za-z0-9._-]', '', handle) for handle in handles]
+        while bad_one is not None:
+            bad_one, good_ones, left = await codeforces.check_handles(left)
+            if bad_one is not None:
+                not_existing_handles.append(bad_one)
+            handles_to_remove.extend(good_ones)
 
-    for handle in handles_to_remove:
-        if handle in db['id'][str(message.chat['id'])]['cf_handles']:
+        handles_to_remove_from_handles_to_remove = []
+
+        for handle in handles_to_remove:
+            if handle not in db['id'][str(message.chat['id'])]['cf_handles']:
+                not_in_handle_list.append(handle)
+                handles_to_remove_from_handles_to_remove.append(handle)
+
+        for handle in handles_to_remove_from_handles_to_remove:
+            handles_to_remove.remove(handle)
+
+        for handle in handles_to_remove:
             db['id'][str(message.chat['id'])]['cf_handles'].pop(handle)
 
-    save_json()
-    await add_log(f'cf users were removed ({str(message.chat["id"])}) {handles_to_remove}')
-    return handles_to_remove, not_existing_handles, not_in_handle_list
+        save_json()
+        await add_log(
+            f'cf users were removed ({str(message.chat["id"])}) {handles_to_remove} in {time.time() - now:.3f}s')
+        return handles_to_remove, not_existing_handles, not_in_handle_list
+    except Exception as e:
+        await add_log(f'During removing cf handles exception was raised. {e}')
 
 
 async def remove_ac_from_db(usernames, message: types.Message):
-    now = time.time()
-    usernames_to_remove = []
-    not_existing_usernames = []
-    not_in_username_list = []
-    users = []
+    try:
+        now = time.time()
+        usernames_to_remove = []
+        not_existing_usernames = []
+        not_in_username_list = []
+        users = []
 
-    for username in usernames:
-        users.append((username, dp.loop.create_task(atcoder.check_username(username.lstrip(' ')))))
+        for username in usernames:
+            users.append((username, dp.loop.create_task(atcoder.check_username(username.lstrip(' ')))))
 
-    for inputted, username in users:
-        ac_username = await username
-        if not ac_username:
-            not_existing_usernames.append(inputted.lstrip(' '))
-            continue
-        if ac_username in db['id'][str(message.chat['id'])]['ac_usernames']:
-            usernames_to_remove.append(ac_username)
-            continue
-        else:
-            not_in_username_list.append(ac_username)
+        for inputted, username in users:
+            ac_username = await username
+            if not ac_username:
+                not_existing_usernames.append(inputted.lstrip(' '))
+                continue
+            if ac_username in db['id'][str(message.chat['id'])]['ac_usernames']:
+                usernames_to_remove.append(ac_username)
+                continue
+            else:
+                not_in_username_list.append(ac_username)
 
-    for username in usernames_to_remove:
-        if username in db['id'][str(message.chat['id'])]['ac_usernames']:
-            db['id'][str(message.chat['id'])]['ac_usernames'].pop(username)
+        for username in usernames_to_remove:
+            if username in db['id'][str(message.chat['id'])]['ac_usernames']:
+                db['id'][str(message.chat['id'])]['ac_usernames'].pop(username)
 
-    save_json()
-    await add_log(f'ac users were removed ({str(message.chat["id"])}) {usernames_to_remove} in {time.time() - now}s')
-    return usernames_to_remove, not_existing_usernames, not_in_username_list
+        save_json()
+        await add_log(
+            f'ac users were removed ({str(message.chat["id"])}) {usernames_to_remove} in {time.time() - now:.3f}s')
+        return usernames_to_remove, not_existing_usernames, not_in_username_list
+    except Exception as e:
+        await add_log(f'During removing ac usernames exception was raised. {e}')
 
 
 @dp.message_handler(commands=['remove_ac'])
@@ -214,57 +233,79 @@ async def remove_cf(message: types.Message):
 
 
 async def add_cf_to_db(handles, message: types.Message):
-    handles_to_add = []
-    not_existing_handles = []
-    already_added_handles = []
-    for handle in handles:
-        cf_handle = await codeforces.check_handle(handle)
-        if not cf_handle:
-            not_existing_handles.append(handle.lstrip(' '))
-            continue
-        if cf_handle in db['id'][str(message.chat['id'])]['cf_handles']:
-            already_added_handles.append(cf_handle)
-            continue
-        else:
-            handles_to_add.append(cf_handle)
-    for handle in handles_to_add:
-        # print(handle)
-        db['id'][str(message.chat['id'])]['cf_handles'][handle] = await codeforces.get_rating(handle)
-    save_json()
-    await add_log(f'cf users were added ({str(message.chat["id"])}) {handles_to_add}')
-    return handles_to_add, not_existing_handles, already_added_handles
+    try:
+        now = time.time()
+        handles_to_add = []
+        not_existing_handles = []
+        already_added_handles = []
+
+        bad_one = ''
+        left = [re.sub(r'[^A-Za-z0-9._-]', '', handle) for handle in handles]
+        while bad_one is not None:
+            bad_one, good_ones, left = await codeforces.check_handles(left)
+            if bad_one is not None:
+                not_existing_handles.append(bad_one)
+            handles_to_add.extend(good_ones)
+
+        handles_to_remove_from_handles_to_add = []
+
+        for handle in handles_to_add:
+            if handle in db['id'][str(message.chat['id'])]['cf_handles']:
+                already_added_handles.append(handle)
+                handles_to_remove_from_handles_to_add.append(handle)
+
+        for handle in handles_to_remove_from_handles_to_add:
+            handles_to_add.remove(handle)
+
+        handles_to_add_with_ratings = await codeforces.get_multiple_ratings(handles_to_add)
+
+        handles_to_add = []
+
+        for handle, rating in handles_to_add_with_ratings:
+            db['id'][str(message.chat['id'])]['cf_handles'][handle] = rating
+            handles_to_add.append(handle)
+
+        save_json()
+        await add_log(
+            f'cf users were added ({str(message.chat["id"])}) {handles_to_add} in {time.time() - now:.3f}s')
+        return handles_to_add, not_existing_handles, already_added_handles
+    except Exception as e:
+        await add_log(f'During adding cf handles exception was raised. {e}')
 
 
 async def add_ac_to_db(usernames, message: types.Message):
-    now = time.time()
-    usernames_to_add = []
-    not_existing_usernames = []
-    already_added_usernames = []
-    users = []
+    try:
+        now = time.time()
+        usernames_to_add = []
+        not_existing_usernames = []
+        already_added_usernames = []
+        users = []
 
-    for username in usernames:
-        users.append((username, dp.loop.create_task(atcoder.check_username(username.lstrip(' ')))))
+        for username in usernames:
+            users.append((username, dp.loop.create_task(atcoder.check_username(username.lstrip(' ')))))
 
-    for inputted, username in users:
-        ac_username = await username
-        if not ac_username:
-            not_existing_usernames.append(inputted.lstrip(' '))
-            continue
-        if ac_username in db['id'][str(message.chat['id'])]['ac_usernames']:
-            already_added_usernames.append(ac_username)
-            continue
-        else:
-            usernames_to_add.append(ac_username)
-    ratings = []
-    for username in usernames_to_add:
-        ratings.append((username, dp.loop.create_task(atcoder.get_rating(username))))
+        for inputted, username in users:
+            ac_username = await username
+            if not ac_username:
+                not_existing_usernames.append(inputted.lstrip(' '))
+                continue
+            if ac_username in db['id'][str(message.chat['id'])]['ac_usernames']:
+                already_added_usernames.append(ac_username)
+                continue
+            else:
+                usernames_to_add.append(ac_username)
+        ratings = []
+        for username in usernames_to_add:
+            ratings.append((username, dp.loop.create_task(atcoder.get_rating(username))))
 
-    for username, rating in ratings:
-        # print(username)
-        db['id'][str(message.chat['id'])]['ac_usernames'][username] = await rating
-    save_json()
-    await add_log(f'ac users were added ({str(message.chat["id"])}) {usernames_to_add} in {time.time() - now}s')
-    return usernames_to_add, not_existing_usernames, already_added_usernames
+        for username, rating in ratings:
+            db['id'][str(message.chat['id'])]['ac_usernames'][username] = await rating
+        save_json()
+        await add_log(
+            f'ac users were added ({str(message.chat["id"])}) {usernames_to_add} in {time.time() - now:.3f}s')
+        return usernames_to_add, not_existing_usernames, already_added_usernames
+    except Exception as e:
+        await add_log(f'During removing ac usernames exception was raised. {e}')
 
 
 @dp.message_handler(commands=['add_cf'])
@@ -765,44 +806,47 @@ async def main(message: types.Message):
                                                      'Separate them with commas, please':
 
             new_message = await message.reply('<a><b>Processing...</b></a>', parse_mode='HTML')
-            removed_handles, not_existing_handles, not_added_handles = await remove_cf_from_db(
-                str(message.text).split(','), message)
-            # not added and non-existing handles output
-            not_added_and_non_existing = ''
-            if len(not_added_handles) == 0:
-                pass
-            elif len(not_added_handles) == 1:
-                not_added_and_non_existing += f'1 handle wasn\'t in your handle list:\n<a><b>{not_added_handles[0]}</b></a>\n'
-            else:
-                not_added_and_non_existing += f'{len(not_added_handles)} handles weren\'t in your handle list:\n<a><b>' \
-                                              f'{", ".join(sorted(not_added_handles, key=lambda a: a.lower()))}</b></a>\n'
+            try:
+                removed_handles, not_existing_handles, not_added_handles = await remove_cf_from_db(
+                    str(message.text).split(','), message)
+                # not added and non-existing handles output
+                not_added_and_non_existing = ''
+                if len(not_added_handles) == 0:
+                    pass
+                elif len(not_added_handles) == 1:
+                    not_added_and_non_existing += f'1 handle wasn\'t in your handle list:\n<a><b>{not_added_handles[0]}</b></a>\n'
+                else:
+                    not_added_and_non_existing += f'{len(not_added_handles)} handles weren\'t in your handle list:\n<a><b>' \
+                                                  f'{", ".join(sorted(not_added_handles, key=lambda a: a.lower()))}</b></a>\n'
 
-            if len(not_existing_handles) == 0:
-                pass
-            elif len(not_existing_handles) == 1:
-                not_added_and_non_existing += f'1 handle doesn\'t exist:\n<a><b>{not_existing_handles[0]}</b></a>\n'
-            else:
-                not_added_and_non_existing += f'{len(not_existing_handles)} handles don\'t exist:\n' \
-                                              f'<a><b>{", ".join(sorted(not_existing_handles, key=lambda a: a.lower()))}</b></a>\n'
+                if len(not_existing_handles) == 0:
+                    pass
+                elif len(not_existing_handles) == 1:
+                    not_added_and_non_existing += f'1 handle doesn\'t exist:\n<a><b>{not_existing_handles[0]}</b></a>\n'
+                else:
+                    not_added_and_non_existing += f'{len(not_existing_handles)} handles don\'t exist:\n' \
+                                                  f'<a><b>{", ".join(sorted(not_existing_handles, key=lambda a: a.lower()))}</b></a>\n'
 
-            if len(removed_handles) == 0:
-                await new_message.delete()
-                message_text = f'{not_added_and_non_existing}\nNo handles were removed.'
+                if len(removed_handles) == 0:
+                    await new_message.delete()
+                    message_text = f'{not_added_and_non_existing}\nNo handles were removed.'
 
-                await message.reply(f'{message_text}\n\n'
-                                    f'Send me cf handles you want to remove.\n'
-                                    'You can send a list of them.\n'
-                                    'Separate them with commas, please',
-                                    reply_markup=types.ForceReply.create(selective=True), parse_mode='HTML')
-                return
-            elif len(removed_handles) == 1:
-                reply_message = f'{not_added_and_non_existing}\n1 handle was removed:\n<a><b>{removed_handles[0]}</b></a>'
+                    await message.reply(f'{message_text}\n\n'
+                                        f'Send me cf handles you want to remove.\n'
+                                        'You can send a list of them.\n'
+                                        'Separate them with commas, please',
+                                        reply_markup=types.ForceReply.create(selective=True), parse_mode='HTML')
+                    return
+                elif len(removed_handles) == 1:
+                    reply_message = f'{not_added_and_non_existing}\n1 handle was removed:\n<a><b>{removed_handles[0]}</b></a>'
 
-            else:
-                reply_message = f'{not_added_and_non_existing}\n' \
-                                f'{len(removed_handles)} handles were removed:\n<a><b>' \
-                                f'{", ".join(sorted(removed_handles, key=lambda a: a.lower()))}</b></a>'
-            await new_message.edit_text(reply_message, parse_mode='HTML')
+                else:
+                    reply_message = f'{not_added_and_non_existing}\n' \
+                                    f'{len(removed_handles)} handles were removed:\n<a><b>' \
+                                    f'{", ".join(sorted(removed_handles, key=lambda a: a.lower()))}</b></a>'
+                await new_message.edit_text(reply_message, parse_mode='HTML')
+            except Exception as e:
+                await new_message.edit_text('Something happened. Try later', parse_mode='HTML')
 
         elif message.reply_to_message.text[-100:] == 'Send me ac usernames you want to add.\n' \
                                                      'You can send a list of them.\n' \
