@@ -112,33 +112,37 @@ async def find_duration(url):
 async def parse_upcoming():
     html = await get_html(url)
     soup = BeautifulSoup(html, features='html.parser')
-    table = soup.find('div', id='contest-table-upcoming')
-    table = table.find('tbody')
-    time = table.find_all('time')
-    times = []
-    for i in time:
-        times.append(i.contents[0][:-5])
+    try:
+        table = soup.find('div', id='contest-table-upcoming')
+        table = table.find('tbody')
+        time = table.find_all('time')
+        times = []
+        for i in time:
+            times.append(i.contents[0][:-5])
 
-    # time = table.find('time')
-    # print(time.contents)
+        # time = table.find('time')
+        # print(time.contents)
 
-    times = list(map(datetime.datetime.fromisoformat, times))
-    for i in range(len(times)):
-        times[i] -= datetime.timedelta(0, 0, 0, 0, 0, 9)
+        times = list(map(datetime.datetime.fromisoformat, times))
+        for i in range(len(times)):
+            times[i] -= datetime.timedelta(0, 0, 0, 0, 0, 9)
 
-    names = table.find_all('a')[1::2]
-    durations = []
+        names = table.find_all('a')[1::2]
+        durations = []
 
-    for i in range(len(names)):
-        names[i] = str(names[i])[:9] + host + str(names[i])[9:]
-        durations.append(await find_duration(await get_url(names[i])))
+        for i in range(len(names)):
+            names[i] = str(names[i])[:9] + host + str(names[i])[9:]
+            durations.append(await find_duration(await get_url(names[i])))
 
-    table = []
-    contest_type = 'ac'
-    for i in range(len(times)):
-        table.append([times[i], names[i], durations[i], contest_type])
+        table = []
+        contest_type = 'ac'
+        for i in range(len(times)):
+            table.append([times[i], names[i], durations[i], contest_type])
 
-    return table
+        return table
+    except:
+        print("AtCoder has no contests for now. Sad(")
+        return []
 
 
 async def main():
