@@ -657,7 +657,7 @@ async def send_upcoming(message: types.Message):
 
     tz = db['id'][str(message.chat['id'])]['tz']
 
-    for i in upcoming_contests:
+    for i in upcoming_contests[:min(5, len(upcoming_contests))]:
         reply_message += i[1]
         if i[2] != '0':
             reply_message += f' ({i[2]})'
