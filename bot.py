@@ -409,7 +409,7 @@ async def remove_notification(message: types.Message):
 
 
 async def send_cf_rating_changes(contest: str):
-    rating_changes_status, rating_changes = codeforces.get_rating_changes(
+    rating_changes_status, rating_changes = await codeforces.get_rating_changes(
         int(await codeforces.get_id(contest)))
     if not rating_changes_status:
         if not rating_changes:
