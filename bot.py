@@ -76,7 +76,7 @@ async def send_welcome(message: types.Message):
 async def add_person(message: types.Message):
     if db['id'].get(str(message.chat['id'])) is None:
         await add_log(f'person added to db ({str(message.chat["id"])})')
-        db['id'][str(message.chat['id'])] = {"tz": 3,
+        db['id'][str(message.chat['id'])] = {"tz": "UTC+02:00",
                                              "status": 1,
                                              "notifications": [
                                                  15,
@@ -662,7 +662,7 @@ async def send_upcoming(message: types.Message):
         if i[2] != '0':
             reply_message += f' ({i[2]})'
         reply_message += '\nStart Time: '
-        reply_message += (i[0] + datetime.timedelta(hours=tz)).strftime('%d.%m.%Y %H:%M')
+        reply_message += (i[0] + await get_timezone(tz)).strftime('%d.%m.%Y %H:%M')
         reply_message += ' <a><b>('
         mins = int(float(str((i[0] - datetime.datetime.utcnow()) / datetime.timedelta(minutes=1))))
         if mins < 1440:
@@ -676,11 +676,21 @@ async def send_upcoming(message: types.Message):
     # print(reply_message)
 
 
+async def get_timezone(utctimezoneformat):
+    if utctimezoneformat[0:3] != "UTC":
+        raise ValueError("Timezone format is wrong")
+    hours = int(utctimezoneformat[3:6])
+    minutes = int(utctimezoneformat[3] + utctimezoneformat[7:9])
+    if abs(hours) > 24 or abs(minutes) > 60:
+        raise ValueError("Either hours or minutes numbers are too big")
+    return datetime.timedelta(hours=hours, minutes=minutes)
+
+
 @dp.message_handler(commands=['timezone'])
 async def change_timezone(message: types.Message):
     await add_log(f'timezone was changed ({str(message.chat["id"])})')
     await add_person(message)
-    await message.reply('Send me new timezone (number of hours offset from UTC)',
+    await message.reply('Send me new timezone in format UTC+hh:mm',
                         reply_markup=types.ForceReply.create(selective=True), reply=True)
 
 
@@ -689,16 +699,15 @@ async def main(message: types.Message):
     await add_person(message)
     # print(message.text)
     if message.reply_to_message is not None:
-        if message.reply_to_message.text[-54:] == 'Send me new timezone (number of hours offset from UTC)':
+        if message.reply_to_message.text[-40:] == 'Send me new timezone in format UTC+hh:mm':
             try:
-                int(message.text)
-                if (int(message.text) > 12) or (int(message.text) < -12):
-                    raise ValueError
-            except ValueError:
-                await message.answer("Not a valid timezone. Send me new timezone (number of hours offset from UTC)",
+                await get_timezone(message.text)
+            except Exception as e:
+                await message.answer("Not a valid timezone. Send me new timezone in format UTC+hh:mm",
                                      reply_markup=types.ForceReply.create(selective=True), reply=True)
+                await add_log(f"During timezone changing exception was caught. {message.from_user}\n{e}")
                 return
-            db['id'][str(message.chat['id'])]["tz"] = int(message.text)
+            db['id'][str(message.chat['id'])]["tz"] = message.text
             save_json()
             await message.answer("Timezone was edited successfully")
         elif message.reply_to_message.text[-35:] == 'Send me your new status if you want':
