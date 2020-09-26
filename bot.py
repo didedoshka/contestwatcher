@@ -628,11 +628,11 @@ async def send_message(message: types.Message):
         return
     args = message.text.split()[1:]
     if args[0] == "1":
-        await bot.send_message(args[1], args[2])
+        await bot.send_message(args[1], ' '.join(args[2:]))
         await add_log(f"message was sent to {args[1]}\n{' '.join(args[2:])}")
     else:
         for user in db['id']:
-            await bot.send_message(user, args[1])
+            await bot.send_message(user, ' '.join(args[1:]))
             await add_log(f"message was sent to {user}\n{' '.join(args[1:])}")
 
 
