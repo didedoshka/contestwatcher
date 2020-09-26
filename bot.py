@@ -506,8 +506,6 @@ async def send_rating_changes(wait_for):
 
         save_json()
 
-        print(db["rating_changes"])
-
         await asyncio.sleep(wait_for)
 
 
@@ -553,7 +551,7 @@ async def check_changes(wait_for):
                 for contest in upcoming:
                     # print(((contest[0] - datetime.datetime.utcnow())) / datetime.timedelta(minutes=1))
                     if (int((contest[0] - datetime.datetime.utcnow()) / datetime.timedelta(
-                            minutes=1)) == notification):
+                            minutes=1)) == notification - 1):
                         message = ''
                         message += contest[1]
                         message += (f' ({contest[2]}) starts in ' if contest[2] != '0' else ' starts in ')
@@ -610,7 +608,7 @@ async def send_logs(message: types.Message):
 
 
 @dp.message_handler(commands=['stats'])
-async def send_logs(message: types.Message):
+async def send_stats(message: types.Message):
     if str(message.chat['id']) != str(config.ADMIN):
         await message.reply('You\'re not an administrator here')
         await add_log(f'he tried to get statistics ({message.chat["id"]})')
@@ -620,6 +618,22 @@ async def send_logs(message: types.Message):
     reply_message = f'Bot users: {stats[0]}\nCF Handles: {stats[1]}\nAC Usernames: {stats[2]}'
 
     await message.reply(reply_message, parse_mode='HTML')
+
+
+@dp.message_handler(commands=['message'])
+async def send_message(message: types.Message):
+    if str(message.chat['id']) != str(config.ADMIN):
+        await message.reply('You\'re not an administrator here')
+        await add_log(f'he tried to get logs ({message.chat["id"]})')
+        return
+    args = message.text.split()[1:]
+    if args[0] == "1":
+        await bot.send_message(args[1], args[2])
+        await add_log(f"message was sent to {args[1]}\n{args[2]}")
+    else:
+        for user in db['id']:
+            await bot.send_message(user, args[1])
+            await add_log(f"message was sent to {user}\n{args[1]}")
 
 
 @dp.message_handler(commands=['refresh'])
