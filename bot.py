@@ -704,7 +704,7 @@ async def get_timezone(utctimezoneformat):
 async def change_timezone(message: types.Message):
     await add_log(f'timezone was changed ({str(message.chat["id"])})')
     await add_person(message)
-    await message.reply('Send me new timezone in format UTC+hh:mm',
+    await message.reply('Send me new timezone in format UTC±hh:mm',
                         reply_markup=types.ForceReply.create(selective=True), reply=True)
 
 
