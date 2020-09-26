@@ -713,11 +713,11 @@ async def main(message: types.Message):
     await add_person(message)
     # print(message.text)
     if message.reply_to_message is not None:
-        if message.reply_to_message.text[-40:] == 'Send me new timezone in format UTC+hh:mm':
+        if message.reply_to_message.text[-40:] == 'Send me new timezone in format UTC±hh:mm':
             try:
                 await get_timezone(message.text)
             except Exception as e:
-                await message.answer("Not a valid timezone. Send me new timezone in format UTC+hh:mm",
+                await message.answer("Not a valid timezone. Send me new timezone in format UTC±hh:mm",
                                      reply_markup=types.ForceReply.create(selective=True), reply=True)
                 await add_log(f"During timezone changing exception was caught. {message.from_user}\n{e}")
                 return
