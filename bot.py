@@ -95,8 +95,11 @@ async def remove_person(user):
 
 async def remove_persons_from_db():
     for user in persons_to_remove:
-        await add_log(f'person removed from db ({user})')
-        db['id'].pop(user)
+        try:
+            await add_log(f'person removed from db ({user})')
+            db['id'].pop(user)
+        except KeyError:
+            await add_log(f'AHAHAHAHHAHAHAHAHA, cant remove person from db ({user})')
     save_json()
 
 
