@@ -101,7 +101,7 @@ async def remove_persons_from_db():
         except KeyError:
             await add_log(f'AHAHAHAHHAHAHAHAHA, cant remove person from db ({user})')
     save_json()
-    persons_to_remove = []
+    persons_to_remove.clear()
 
 
 # start
