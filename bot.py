@@ -413,48 +413,54 @@ async def remove_notification(message: types.Message):
 
 
 async def send_cf_rating_changes(contest: str):
-    rating_changes_status, rating_changes = await codeforces.get_rating_changes(
-        int(await codeforces.get_id(contest)))
-    if not rating_changes_status:
-        if not rating_changes:
-            await add_log('contest happened to be unrated')
-            return 1
-        else:
-            await add_log('rating changes aren\'t out yet')
-        return
+    try:
+        rating_changes_status, rating_changes = await codeforces.get_rating_changes(
+            int(await codeforces.get_id(contest)))
+        if not rating_changes_status:
+            if not rating_changes:
+                await add_log('contest happened to be unrated')
+                return 1
+            else:
+                await add_log('rating changes aren\'t out yet')
+            return
 
-    for user in db['id']:
-        message = 'Rating changes for ' + contest + ' are out:\n\n'
-        changes = []
-        for handle in db['id'][user]['cf_handles']:
-            # print(handle)
-            for cf_user in rating_changes:
-                # print(cf_user['handle'])
-                if cf_user['handle'] == handle:
-                    changes.append([cf_user['newRating'] - cf_user['oldRating'], cf_user['oldRating'],
-                                    cf_user['newRating'], handle])
-                    db['id'][user]['cf_handles'][handle] = cf_user['newRating']
-                    break
-        changes.sort(reverse=True)
-        if len(changes) != 0:
-            for change in changes:
-                message += f'<a><b>{change[3]}</b></a>\n{change[1]} -> {change[2]} ({"+" if change[0] > 0 else ""}{change[0]})\n\n'
+        for user in db['id']:
+            message = 'Rating changes for ' + contest + ' are out:\n\n'
+            changes = []
+            for handle in db['id'][user]['cf_handles']:
+                # print(handle)
+                for cf_user in rating_changes:
+                    # print(cf_user['handle'])
+                    if cf_user['handle'] == handle:
+                        changes.append([cf_user['newRating'] - cf_user['oldRating'], cf_user['oldRating'],
+                                        cf_user['newRating'], handle])
+                        db['id'][user]['cf_handles'][handle] = cf_user['newRating']
+                        break
+            changes.sort(reverse=True)
+            if len(changes) != 0:
+                for change in changes:
+                    message += f'<a><b>{change[3]}</b></a>\n{change[1]} -> {change[2]} ({"+" if change[0] > 0 else ""}{change[0]})\n\n'
 
-            try:
-                if db['id'][user]['status'] == 2:
-                    await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True,
-                                           disable_notification=True)
-                    await add_log(f'rating changes were sent to ({user})')
-                elif db['id'][user]['status'] == 1:
-                    await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True)
-                    await add_log(f'rating changes were sent to ({user})')
-                else:
-                    pass
-            except Exception as e:
-                await remove_person(user)
-                await bot.send_message(config.ADMIN, f"{e}")
+                try:
+                    if db['id'][user]['status'] == 2:
+                        await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True,
+                                               disable_notification=True)
+                        await add_log(f'rating changes were sent to ({user})')
+                    elif db['id'][user]['status'] == 1:
+                        await bot.send_message(user, message, parse_mode='HTML', disable_web_page_preview=True)
+                        await add_log(f'rating changes were sent to ({user})')
+                    else:
+                        pass
+                except Exception as e:
+                    await remove_person(user)
+                    await bot.send_message(config.ADMIN, f"{e}")
 
-    return 1
+        return 1
+      
+    except Exception as e:
+        await add_log(f'send_cf_rating_changes died!\n{e}')
+        await bot.send_message(config.ADMIN, f"{e}")
+        return 0
 
 
 async def send_ac_rating_changes(contest):
